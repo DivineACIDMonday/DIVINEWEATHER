@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0a0a0f">
+<meta name="theme-color" content="#0d0d14">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Weer+">
-<title>Weer+ Consensus</title>
+<meta name="apple-mobile-web-app-title" content="Divine Weather">
+<title>Divine Weather</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root{
-  --bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
-  --text:#f0efe8;--muted:rgba(240,239,232,0.45);--dim:rgba(240,239,232,0.16);
+  --bg:#0d0d14;--surface:#1c1c28;--surface2:#252535;
+  --border:rgba(255,255,255,0.15);--border2:rgba(255,255,255,0.30);
+  --text:#f5f4ef;--muted:rgba(245,244,239,0.78);--dim:rgba(245,244,239,0.50);
   --accent:#7effc4;--accent2:#4fd9ff;--warn:#ffb347;--err:#ff6b6b;
   --purple:#c4b5fd;--pink:#f9a8d4;--blue:#60a5fa;--orange:#fb923c;--green:#34d399;
   --mono:'DM Mono',monospace;--head:'Syne',sans-serif;
@@ -26,7 +26,7 @@ body{padding:calc(var(--safe-top)+16px) 16px calc(var(--safe-bottom)+32px);max-w
 
 .header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
 .header h1{font-family:var(--head);font-size:22px;font-weight:800;letter-spacing:-0.5px;line-height:1}
-.header .tagline{font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:0.08em;text-transform:uppercase}
+.header .tagline{font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:0.08em;text-transform:uppercase}
 .refresh-btn{background:var(--surface2);border:0.5px solid var(--border2);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);flex-shrink:0}
 .refresh-btn:active{transform:scale(0.92)}
 .refresh-btn.spinning svg{animation:spin 1s linear infinite}
@@ -36,7 +36,7 @@ body{padding:calc(var(--safe-top)+16px) 16px calc(var(--safe-bottom)+32px);max-w
 .loc-input-wrap{display:flex;gap:7px;margin-bottom:10px}
 .loc-wrap{position:relative;flex:1}
 .loc-input{width:100%;background:var(--surface);border:0.5px solid var(--border2);border-radius:12px;padding:10px 13px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;transition:border-color .2s}
-.loc-input::placeholder{color:var(--dim)}
+.loc-input::placeholder{color:var(--muted)}
 .loc-input:focus{border-color:rgba(126,255,196,0.4)}
 .loc-gps-btn{background:var(--surface);border:0.5px solid var(--border2);border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--accent2);display:flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);white-space:nowrap}
 .suggest-list{display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:0.5px solid var(--border2);border-radius:12px;z-index:100;max-height:180px;overflow-y:auto;margin-top:3px}
@@ -65,9 +65,9 @@ body{padding:calc(var(--safe-top)+16px) 16px calc(var(--safe-bottom)+32px);max-w
 .alert-card.orange .alert-title{color:var(--warn)}
 .alert-card.green .alert-title{color:var(--accent)}
 .alert-card.blue .alert-title{color:var(--accent2)}
-.alert-body{font-size:11px;color:var(--muted);line-height:1.6}
+.alert-body{font-size:12px;color:var(--text);line-height:1.6;opacity:0.85}
 
-.section-label{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:8px}
+.section-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:8px}
 .mb16{margin-bottom:16px}
 
 /* GROTE TEMP */
@@ -76,8 +76,8 @@ body{padding:calc(var(--safe-top)+16px) 16px calc(var(--safe-bottom)+32px);max-w
 .weather-emoji{font-size:30px;display:block;margin-bottom:2px}
 .big-temp-val{font-family:var(--head);font-size:62px;font-weight:700;line-height:1;letter-spacing:-3px}
 .big-temp-val .unit{font-size:26px;color:var(--muted);vertical-align:super;letter-spacing:0}
-.condition-text{font-size:11px;color:var(--accent);margin-top:5px;letter-spacing:0.1em;text-transform:uppercase}
-.feels-like{font-size:10px;color:var(--muted);margin-top:3px}
+.condition-text{font-size:12px;color:var(--accent);font-weight:600;margin-top:5px;letter-spacing:0.1em;text-transform:uppercase}
+.feels-like{font-size:11px;color:var(--text);opacity:0.7;margin-top:3px}
 
 /* LUCHTKWALITEIT BAR */
 .aqi-bar{display:flex;align-items:center;gap:10px;margin-top:10px;background:var(--surface2);border-radius:10px;padding:8px 12px}
@@ -90,13 +90,13 @@ body{padding:calc(var(--safe-top)+16px) 16px calc(var(--safe-bottom)+32px);max-w
 /* GAUGE CARDS */
 .metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
 .metric-card{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:11px 13px 9px;position:relative;overflow:hidden}
-.metric-label{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px}
+.metric-label{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px}
 .metric-val{font-family:var(--head);font-size:19px;font-weight:600;line-height:1}
 .metric-unit{font-size:10px;color:var(--muted);font-family:var(--mono);font-weight:300}
 .gauge-wrap{margin-top:7px}
 .gauge-track{height:3px;background:var(--border2);border-radius:3px;overflow:hidden}
 .gauge-fill{height:100%;border-radius:3px;transition:width .8s ease}
-.gauge-labels{display:flex;justify-content:space-between;font-size:7px;color:var(--dim);margin-top:2px}
+.gauge-labels{display:flex;justify-content:space-between;font-size:8px;color:var(--muted);margin-top:2px}
 .card-icon{position:absolute;top:9px;right:11px;font-size:17px;opacity:0.22}
 
 /* KAART */
@@ -106,15 +106,15 @@ body{padding:calc(var(--safe-top)+16px) 16px calc(var(--safe-bottom)+32px);max-w
 .tab-row::-webkit-scrollbar{display:none}
 .tab-btn{flex-shrink:0;padding:6px 10px;background:var(--surface);border:0.5px solid var(--border);border-radius:9px;font-size:10px;color:var(--muted);cursor:pointer;font-family:var(--mono);white-space:nowrap}
 .tab-btn.active{color:var(--accent);border-color:rgba(126,255,196,0.3);background:rgba(126,255,196,0.05)}
-.map-legend{position:absolute;top:9px;right:9px;z-index:500;background:rgba(10,10,15,0.85);border:0.5px solid var(--border2);border-radius:8px;padding:5px 9px;font-size:9px;color:var(--muted);backdrop-filter:blur(4px)}
+.map-legend{position:absolute;top:9px;right:9px;z-index:500;background:rgba(10,10,15,0.85);border:0.5px solid var(--border2);border-radius:8px;padding:5px 9px;font-size:11px;color:var(--text);backdrop-filter:blur(4px)}
 
 /* AARDBEVINGEN */
 .quake-list{display:flex;flex-direction:column;gap:6px}
 .quake-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:9px 12px}
 .quake-mag{font-family:var(--head);font-size:16px;font-weight:700;min-width:32px;text-align:center}
 .quake-info{flex:1}
-.quake-place{font-size:11px;color:var(--text)}
-.quake-meta{font-size:10px;color:var(--muted);margin-top:2px}
+.quake-place{font-size:12px;color:var(--text);font-weight:500}
+.quake-meta{font-size:11px;color:var(--muted);margin-top:2px}
 .quake-badge{font-size:9px;padding:2px 7px;border-radius:20px;white-space:nowrap}
 .mag-low{color:var(--accent);background:rgba(126,255,196,0.1);border:0.5px solid rgba(126,255,196,0.2)}
 .mag-med{color:var(--warn);background:rgba(255,179,71,0.1);border:0.5px solid rgba(255,179,71,0.2)}
@@ -127,37 +127,49 @@ body{padding:calc(var(--safe-top)+16px) 16px calc(var(--safe-bottom)+32px);max-w
 .precip-bar{width:100%;background:var(--accent2);border-radius:2px 2px 0 0;min-height:2px;opacity:0.65}
 .precip-bar.heavy{background:var(--warn);opacity:.85}
 .precip-bar.extreme{background:var(--err)}
-.precip-lbl{font-size:8px;color:var(--dim);text-align:center}
+.precip-lbl{font-size:9px;color:var(--muted);text-align:center}
 
 /* BRONNEN */
 .source-row{display:flex;align-items:center;padding:8px 11px;background:var(--surface);border:0.5px solid var(--border);border-radius:10px;margin-bottom:4px;gap:8px}
 .source-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.source-name{flex:1;color:var(--muted);font-size:10px}
-.source-vals{font-size:10px;color:var(--text)}
-.source-badge{font-size:9px;padding:1px 6px;border-radius:20px;white-space:nowrap}
+.source-name{flex:1;color:var(--text);font-size:11px}
+.source-vals{font-size:11px;color:var(--text)}
+.source-badge{font-size:10px;padding:2px 7px;border-radius:20px;white-space:nowrap}
 .badge-ok{background:rgba(126,255,196,0.1);color:var(--accent);border:0.5px solid rgba(126,255,196,0.2)}
 .badge-err{background:rgba(255,107,107,0.1);color:var(--err);border:0.5px solid rgba(255,107,107,0.2)}
 .badge-wait{background:rgba(255,179,71,0.1);color:var(--warn);border:0.5px solid rgba(255,179,71,0.2)}
 .avg-row{display:flex;align-items:center;padding:9px 11px;background:rgba(126,255,196,0.05);border:0.5px solid rgba(126,255,196,0.15);border-radius:10px;margin-top:5px;gap:8px}
-.avg-label{flex:1;font-family:var(--head);font-weight:600;font-size:10px;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase}
-.avg-vals{display:flex;gap:8px;color:var(--accent);font-size:10px}
+.avg-label{flex:1;font-family:var(--head);font-weight:700;font-size:11px;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase}
+.avg-vals{display:flex;gap:8px;color:var(--accent);font-size:11px}
 
 .detail-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border)}
 .detail-row:last-child{border-bottom:none}
-.detail-key{color:var(--muted);font-size:10px}
+.detail-key{color:var(--text);font-size:11px;font-weight:500}
 .detail-v{color:var(--text);font-family:var(--head);font-weight:600;font-size:12px}
 
-.status-bar{font-size:9px;color:var(--dim);text-align:center;margin-top:14px;letter-spacing:0.04em;line-height:1.8}
+.status-bar{font-size:10px;color:var(--muted);text-align:center;margin-top:14px;letter-spacing:0.04em;line-height:1.8}
 .leaflet-control-attribution{display:none!important}
 .leaflet-control-zoom{display:none}
+
+/* FAVORIETEN */
+.fav-section{margin-bottom:12px}
+.fav-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:32px}
+.fav-chip{display:flex;align-items:center;gap:5px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:20px;padding:5px 10px 5px 12px;font-size:11px;color:var(--text);cursor:pointer;transition:border-color .15s;white-space:nowrap}
+.fav-chip:active{background:var(--surface)}
+.fav-chip .fav-name{max-width:100px;overflow:hidden;text-overflow:ellipsis}
+.fav-chip .fav-del{color:var(--dim);font-size:13px;line-height:1;padding:0 2px;margin-left:2px}
+.fav-chip .fav-del:hover{color:var(--err)}
+.fav-add-btn{background:transparent;border:0.5px dashed var(--border2);border-radius:20px;padding:5px 12px;font-size:11px;color:var(--muted);cursor:pointer;white-space:nowrap;font-family:var(--mono)}
+.fav-add-btn:active{border-color:var(--accent);color:var(--accent)}
+.fav-empty{font-size:11px;color:var(--dim);font-style:italic}
 </style>
 </head>
 <body>
 
 <div class="header">
   <div>
-    <h1>Weer+ Consensus</h1>
-    <p class="tagline">10 bronnen · Aardbevingen · GDACS Rampen · Luchtkwaliteit · Wereldwijd</p>
+    <h1>Divine Weather</h1>
+    <p class="tagline">Wereldwijd · 10 bronnen · Live radar · Gevaren</p>
   </div>
   <button class="refresh-btn" id="refresh-btn" onclick="doFetch()" aria-label="Vernieuwen">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
@@ -178,6 +190,12 @@ body{padding:calc(var(--safe-top)+16px) 16px calc(var(--safe-bottom)+32px);max-w
   <span id="loc-resolved-text"></span>
 </div>
 
+
+<div class="fav-section" id="fav-section">
+  <div class="fav-row" id="fav-row">
+    <span class="fav-empty" id="fav-empty">Nog geen favorieten — sla huidige locatie op na ophalen</span>
+  </div>
+</div>
 <button class="fetch-btn" id="fetch-btn" onclick="doFetch()">Weer + Gevaren ophalen</button>
 <div class="progress-track"><div class="progress-fill" id="progress"></div></div>
 
@@ -259,16 +277,15 @@ body{padding:calc(var(--safe-top)+16px) 16px calc(var(--safe-bottom)+32px);max-w
 
   <!-- LIVE KAART -->
   <div class="mb16">
-    <div class="section-label">Live weerradar &amp; bewolking</div>
+    <div class="section-label">Live neerslag radar</div>
     <div class="tab-row">
       <button class="tab-btn active" onclick="setLayer('radar')" id="tab-radar">🌧 Neerslag radar</button>
-      <button class="tab-btn" onclick="setLayer('satellite')" id="tab-satellite">☁ Satelliet bewolking</button>
     </div>
     <div class="map-container">
       <div id="weather-map"></div>
       <div class="map-legend" id="map-legend">🌧 Neerslag radar — actueel</div>
-      <div id="map-time" style="position:absolute;bottom:9px;left:9px;z-index:500;background:rgba(10,10,15,0.85);border:0.5px solid var(--border2);border-radius:8px;padding:4px 9px;font-size:9px;color:var(--accent2);backdrop-filter:blur(4px);font-family:var(--mono)"></div>
-      <div id="map-anim-btn" onclick="toggleAnim()" style="position:absolute;bottom:9px;right:9px;z-index:500;background:rgba(10,10,15,0.85);border:0.5px solid var(--border2);border-radius:8px;padding:4px 10px;font-size:10px;color:var(--muted);cursor:pointer;backdrop-filter:blur(4px)">▶ Animeren</div>
+      <div id="map-time" style="position:absolute;bottom:9px;left:9px;z-index:500;background:rgba(10,10,15,0.85);border:0.5px solid var(--border2);border-radius:8px;padding:4px 9px;font-size:11px;color:var(--accent2);font-weight:500;backdrop-filter:blur(4px);font-family:var(--mono)"></div>
+      <div id="map-anim-btn" onclick="toggleAnim()" style="position:absolute;bottom:9px;right:9px;z-index:500;background:rgba(10,10,15,0.85);border:0.5px solid var(--border2);border-radius:8px;padding:4px 10px;font-size:11px;color:var(--text);cursor:pointer;backdrop-filter:blur(4px)">▶ Animeren</div>
     </div>
   </div>
 
@@ -426,10 +443,12 @@ async function initMap(lat,lon){
   } else {
     map.setView([lat,lon],7);
   }
-  if(window._mk)window._mk.remove();
-  window._mk=L.circleMarker([lat,lon],{radius:7,color:"#7effc4",fillColor:"#7effc4",fillOpacity:1,weight:2}).addTo(map);
   await loadRainViewer();
   setLayer(curLayer);
+  if(window._mk) window._mk.remove();
+  window._mk = L.circleMarker([lat,lon],{
+    radius:7, color:"#7effc4", fillColor:"#7effc4", fillOpacity:1, weight:2
+  }).addTo(map);
 }
 
 async function loadRainViewer(){
@@ -464,7 +483,7 @@ function setLayer(key){
     // Kleurschema 2 = blauw-groen-geel-rood standaard neerslag
     // smooth=1, snow=1
     const url=`${host}${f.path}/512/{z}/{x}/{y}/2/1_1.png`;
-    const layer=L.tileLayer(url,{opacity:0.75,maxZoom:7,tileSize:512,zoomOffset:-1});
+    const layer=L.tileLayer(url,{opacity:0.90,maxZoom:7,tileSize:512,zoomOffset:-1});
     layer.addTo(map);
     rvLayers=[layer];
     rvFrameIdx=frames.length-1;
@@ -490,7 +509,7 @@ function setLayer(key){
     const f=frames[frames.length-1];
     const host=rvData.host;
     const url=`${host}${f.path}/512/{z}/{x}/{y}/0/0_0.png`;
-    const layer=L.tileLayer(url,{opacity:0.7,maxZoom:7,tileSize:512,zoomOffset:-1});
+    const layer=L.tileLayer(url,{opacity:0.78,maxZoom:7,tileSize:512,zoomOffset:-1});
     layer.addTo(map);
     rvLayers=[layer];
     rvFrameIdx=frames.length-1;
@@ -651,6 +670,83 @@ function showPrecip(p){
   document.getElementById("precip-section").style.display="block";
 }
 
+
+// =================== FAVORIETEN (localStorage) ===================
+function loadFavs(){
+  try{ return JSON.parse(localStorage.getItem("dw_favs")||"[]") }
+  catch{ return [] }
+}
+function saveFavs(favs){ localStorage.setItem("dw_favs", JSON.stringify(favs)) }
+
+function renderFavs(){
+  const favs = loadFavs();
+  const row = document.getElementById("fav-row");
+  row.innerHTML = "";
+
+  if(!favs.length && !rLat){
+    const em = document.createElement("span");
+    em.className = "fav-empty";
+    em.textContent = "Geen favorieten — haal weer op en tik '+ Sla op'";
+    row.appendChild(em);
+    return;
+  }
+
+  // Toon opgeslagen favorieten als chips
+  favs.forEach((fav,i)=>{
+    const chip = document.createElement("div");
+    chip.className = "fav-chip";
+    chip.title = fav.name;
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "fav-name";
+    nameSpan.textContent = "⭐ " + fav.name;
+    const delSpan = document.createElement("span");
+    delSpan.className = "fav-del";
+    delSpan.textContent = "✕";
+    delSpan.onclick = (e)=>deleteFav(i,e);
+    chip.appendChild(nameSpan);
+    chip.appendChild(delSpan);
+    chip.onclick = ()=>loadFav(fav);
+    row.appendChild(chip);
+  });
+
+  // Toon "+ Sla op" knop als er een actieve locatie is die nog niet opgeslagen is
+  if(rLat && rName){
+    const alreadySaved = favs.some(f=>f.name===rName);
+    if(!alreadySaved){
+      const addBtn = document.createElement("button");
+      addBtn.className = "fav-add-btn";
+      addBtn.textContent = "+ Sla '" + rName.split(",")[0] + "' op";
+      addBtn.onclick = saveCurFav;
+      row.appendChild(addBtn);
+    }
+  }
+}
+
+function saveCurFav(){
+  if(!rLat||!rName) return;
+  const favs = loadFavs();
+  if(favs.find(f=>f.name===rName)) return; // al opgeslagen
+  favs.push({name:rName, lat:rLat, lon:rLon});
+  saveFavs(favs);
+  renderFavs();
+  setS("⭐ "+rName+" opgeslagen als favoriet.");
+}
+
+function deleteFav(idx, e){
+  e.stopPropagation();
+  const favs = loadFavs();
+  favs.splice(idx,1);
+  saveFavs(favs);
+  renderFavs();
+}
+
+function loadFav(fav){
+  rLat = fav.lat; rLon = fav.lon; rName = fav.name;
+  document.getElementById("loc-input").value = fav.name;
+  showRes(fav.name);
+  doFetch();
+}
+
 // =================== HOOFD FETCH ===================
 async function doFetch(){
   if(!rLat){const q=document.getElementById("loc-input").value.trim();if(!q){setS("Voer eerst een stad in of gebruik GPS.");return}await geocodeManual(q);if(!rLat)return}
@@ -714,9 +810,11 @@ async function doFetch(){
   const ok=sd.filter(x=>x&&x!==undefined).length;
   setS(`${ok}/10 weerbronnen · USGS aardbevingen · GDACS · AQI · ${rName} · ${new Date().toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"})}`);
   rb.classList.remove("spinning");rb.disabled=false;fb.disabled=false;
+  renderFavs();
 }
 
 document.addEventListener("click",e=>{if(!e.target.closest(".loc-wrap"))hideSug()});
+renderFavs();
 </script>
 </body>
 </html>
