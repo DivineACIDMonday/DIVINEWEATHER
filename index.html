@@ -1,1097 +1,820 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DIVINE CONVERTER</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d0d14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Divine Weather">
+<title>Divine Weather</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
-
-:root {
-  --bg: #0d1b2a;
-  --surface: #132235;
-  --card: #1a2e42;
-  --border: #1e3a52;
-  --orange: #e85d04;
-  --orange-dim: #e85d0420;
-  --orange-mid: #e85d0460;
-  --blue: #1a6ea8;
-  --blue-dim: #1a6ea820;
-  --text: #e8eef4;
-  --mid: #6b8fa8;
-  --dim: #2d4a62;
+:root{
+  --bg:#0d0d14;--surface:#1c1c28;--surface2:#252535;
+  --border:rgba(255,255,255,0.15);--border2:rgba(255,255,255,0.30);
+  --text:#f5f4ef;--muted:rgba(245,244,239,0.78);--dim:rgba(245,244,239,0.50);
+  --accent:#7effc4;--accent2:#4fd9ff;--warn:#ffb347;--err:#ff6b6b;
+  --purple:#c4b5fd;--pink:#f9a8d4;--blue:#60a5fa;--orange:#fb923c;--green:#34d399;
+  --mono:'DM Mono',monospace;--head:'Syne',sans-serif;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)
 }
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Barlow', sans-serif;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* BACKGROUND GRID */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(26,110,168,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(26,110,168,0.04) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* HEADER */
-header {
-  position: relative;
-  z-index: 10;
-  padding: 32px 48px 28px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--surface);
-}
-
-.logo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.logo-eyebrow {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.35em;
-  color: var(--mid);
-  text-transform: uppercase;
-}
-
-.logo-eyebrow span { color: var(--orange); }
-
-.logo h1 {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 42px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  color: var(--text);
-}
-
-.logo h1 span { color: var(--orange); }
-
-.logo-sub {
-  font-size: 13px;
-  font-weight: 300;
-  color: var(--mid);
-  margin-top: 2px;
-  letter-spacing: 0.04em;
-}
-
-.status-bar {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-
-#engine-status {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: var(--mid);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-#engine-status .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--dim);
-  transition: background 0.4s;
-}
-
-#engine-status.ready .dot { background: var(--orange); box-shadow: 0 0 8px var(--orange); }
-#engine-status.loading .dot { background: var(--blue); animation: blink 0.8s infinite; }
-
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-/* MAIN LAYOUT */
-main {
-  position: relative;
-  z-index: 10;
-  padding: 40px 48px;
-  max-width: 960px;
-}
-
-/* DROP ZONE */
-.drop-zone {
-  border: 2px dashed var(--border);
-  background: var(--surface);
-  padding: 56px 40px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.25s;
-  position: relative;
-  margin-bottom: 32px;
-}
-
-.drop-zone::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 20px; height: 20px;
-  border-top: 2px solid var(--orange);
-  border-left: 2px solid var(--orange);
-}
-
-.drop-zone::after {
-  content: '';
-  position: absolute;
-  bottom: 0; right: 0;
-  width: 20px; height: 20px;
-  border-bottom: 2px solid var(--orange);
-  border-right: 2px solid var(--orange);
-}
-
-.drop-zone:hover, .drop-zone.drag-over {
-  border-color: var(--orange);
-  background: var(--orange-dim);
-}
-
-.drop-zone input[type="file"] {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  width: 100%;
-  height: 100%;
-}
-
-.drop-icon {
-  font-size: 36px;
-  margin-bottom: 12px;
-  opacity: 0.5;
-}
-
-.drop-zone h2 {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 6px;
-}
-
-.drop-zone p {
-  font-size: 14px;
-  color: var(--mid);
-  font-weight: 300;
-}
-
-.drop-zone .file-name {
-  margin-top: 14px;
-  font-family: 'DM Mono', monospace;
-  font-size: 13px;
-  color: var(--orange);
-  word-break: break-all;
-}
-
-/* CONTROLS GRID */
-.controls {
-  display: none;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.controls.visible { display: flex; }
-
-/* SECTION */
-.section-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.3em;
-  color: var(--mid);
-  text-transform: uppercase;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.section-label::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-/* FORMAT GRID */
-.format-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.fmt-btn {
-  padding: 8px 16px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  color: var(--mid);
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.fmt-btn:hover {
-  border-color: var(--blue);
-  color: var(--text);
-}
-
-.fmt-btn.selected {
-  background: var(--orange);
-  border-color: var(--orange);
-  color: #fff;
-  font-weight: 500;
-}
-
-.fmt-btn.disabled {
-  opacity: 0.25;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-/* OPTIONS ROW */
-.options-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.opt-btn {
-  padding: 8px 18px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  color: var(--mid);
-  font-family: 'Barlow', sans-serif;
-  font-size: 13px;
-  font-weight: 400;
-  cursor: pointer;
-  transition: all 0.15s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.opt-btn:hover { border-color: var(--blue); color: var(--text); }
-
-.opt-btn.selected {
-  background: var(--blue-dim);
-  border-color: var(--blue);
-  color: var(--text);
-}
-
-/* QUALITY SLIDER */
-.quality-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.quality-row input[type="range"] {
-  flex: 1;
-  -webkit-appearance: none;
-  height: 3px;
-  background: var(--border);
-  outline: none;
-  cursor: pointer;
-}
-
-.quality-row input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  background: var(--orange);
-  cursor: pointer;
-  border: none;
-}
-
-.quality-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  color: var(--orange);
-  min-width: 80px;
-  text-align: right;
-}
-
-/* SOCIAL MEDIA PRESETS */
-.preset-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.preset-btn {
-  padding: 8px 16px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  color: var(--mid);
-  font-family: 'Barlow', sans-serif;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-width: 90px;
-}
-
-.preset-btn:hover { border-color: var(--blue); color: var(--text); }
-.preset-btn.selected { background: var(--blue-dim); border-color: var(--blue); color: var(--text); }
-
-.preset-name {
-  font-weight: 500;
-  font-size: 13px;
-}
-
-.preset-detail {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  color: var(--mid);
-  letter-spacing: 0.05em;
-}
-
-.preset-btn.selected .preset-detail { color: var(--blue); }
-
-/* CONVERT BUTTON */
-.convert-wrap {
-  margin-top: 8px;
-}
-
-.btn-convert {
-  padding: 16px 48px;
-  background: var(--orange);
-  color: #fff;
-  border: none;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.btn-convert:hover { background: #ff6d1a; transform: translateY(-1px); }
-.btn-convert:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-/* PROGRESS */
-.progress-wrap {
-  display: none;
-  margin-top: 24px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 24px;
-}
-
-.progress-wrap.visible { display: block; }
-
-.progress-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  color: var(--mid);
-  margin-bottom: 12px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.progress-bar-bg {
-  height: 4px;
-  background: var(--dim);
-  overflow: hidden;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--blue), var(--orange));
-  width: 0%;
-  transition: width 0.3s;
-}
-
-.progress-log {
-  margin-top: 12px;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  color: var(--mid);
-  height: 48px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-/* RESULT */
-.result-box {
-  display: none;
-  margin-top: 24px;
-  background: var(--surface);
-  border: 1px solid var(--orange);
-  padding: 28px;
-  position: relative;
-}
-
-.result-box::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 3px; height: 100%;
-  background: var(--orange);
-}
-
-.result-box.visible { display: block; }
-
-.result-box h3 {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--orange);
-  margin-bottom: 8px;
-}
-
-.result-meta {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  color: var(--mid);
-  margin-bottom: 16px;
-  letter-spacing: 0.05em;
-}
-
-.btn-download {
-  padding: 12px 32px;
-  background: var(--orange);
-  color: #fff;
-  border: none;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-}
-
-.btn-download:hover { background: #ff6d1a; }
-
-.btn-reset {
-  margin-left: 12px;
-  padding: 12px 24px;
-  background: transparent;
-  color: var(--mid);
-  border: 1px solid var(--border);
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-reset:hover { border-color: var(--mid); color: var(--text); }
-
-/* NOTE BOX */
-.note-box {
-  background: var(--blue-dim);
-  border: 1px solid var(--blue);
-  padding: 14px 18px;
-  font-size: 13px;
-  color: var(--mid);
-  line-height: 1.6;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.03em;
-}
-
-.note-box strong { color: var(--text); }
-
-/* LOADING OVERLAY */
-#ffmpeg-loading {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(13,27,42,0.92);
-  z-index: 200;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 20px;
-}
-
-#ffmpeg-loading.show { display: flex; }
-
-.loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 3px solid var(--dim);
-  border-top-color: var(--orange);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.loading-text {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text);
-}
-
-.loading-sub {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: var(--mid);
-}
-
-/* DIVIDER */
-.divider { height: 1px; background: var(--border); }
-
-/* SPINNER inline */
-.spinner {
-  display: inline-block;
-  width: 14px; height: 14px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;overscroll-behavior:none}
+body{padding:calc(var(--safe-top)+16px) 16px calc(var(--safe-bottom)+32px);max-width:500px;margin:0 auto}
+
+.header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.header h1{font-family:var(--head);font-size:22px;font-weight:800;letter-spacing:-0.5px;line-height:1}
+.header .tagline{font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:0.08em;text-transform:uppercase}
+.refresh-btn{background:var(--surface2);border:0.5px solid var(--border2);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);flex-shrink:0}
+.refresh-btn:active{transform:scale(0.92)}
+.refresh-btn.spinning svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* LOCATIE */
+.loc-input-wrap{display:flex;gap:7px;margin-bottom:10px}
+.loc-wrap{position:relative;flex:1}
+.loc-input{width:100%;background:var(--surface);border:0.5px solid var(--border2);border-radius:12px;padding:10px 13px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;transition:border-color .2s}
+.loc-input::placeholder{color:var(--muted)}
+.loc-input:focus{border-color:rgba(126,255,196,0.4)}
+.loc-gps-btn{background:var(--surface);border:0.5px solid var(--border2);border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--accent2);display:flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);white-space:nowrap}
+.suggest-list{display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:0.5px solid var(--border2);border-radius:12px;z-index:100;max-height:180px;overflow-y:auto;margin-top:3px}
+.suggest-item{padding:9px 13px;font-size:12px;cursor:pointer;color:var(--text);border-bottom:0.5px solid var(--border)}
+.suggest-item:last-child{border-bottom:none}
+.loc-resolved{font-size:11px;color:var(--accent2);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+
+.fetch-btn{width:100%;padding:13px;background:var(--accent);color:#0a0a0f;border:none;border-radius:14px;font-family:var(--head);font-size:14px;font-weight:700;letter-spacing:0.04em;cursor:pointer;margin-bottom:16px}
+.fetch-btn:active{opacity:.8}
+.fetch-btn:disabled{opacity:.3;cursor:not-allowed}
+
+.progress-track{height:1px;background:var(--border);margin-bottom:18px;overflow:hidden;border-radius:1px}
+.progress-fill{height:100%;background:var(--accent);width:0%;transition:width .35s ease;box-shadow:0 0 8px var(--accent);border-radius:1px}
+
+/* ALERTS PANEEL */
+.alerts-panel{display:none;margin-bottom:16px}
+.alert-card{border-radius:12px;padding:11px 13px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
+.alert-card.red{background:rgba(255,107,107,0.08);border:0.5px solid rgba(255,107,107,0.3)}
+.alert-card.orange{background:rgba(255,179,71,0.08);border:0.5px solid rgba(255,179,71,0.3)}
+.alert-card.green{background:rgba(126,255,196,0.05);border:0.5px solid rgba(126,255,196,0.2)}
+.alert-card.blue{background:rgba(96,165,250,0.07);border:0.5px solid rgba(96,165,250,0.25)}
+.alert-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.alert-content{}
+.alert-title{font-family:var(--head);font-size:12px;font-weight:700;letter-spacing:0.03em;margin-bottom:3px}
+.alert-card.red .alert-title{color:var(--err)}
+.alert-card.orange .alert-title{color:var(--warn)}
+.alert-card.green .alert-title{color:var(--accent)}
+.alert-card.blue .alert-title{color:var(--accent2)}
+.alert-body{font-size:12px;color:var(--text);line-height:1.6;opacity:0.85}
+
+.section-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:8px}
+.mb16{margin-bottom:16px}
+
+/* GROTE TEMP */
+.big-temp{text-align:center;margin-bottom:14px;padding:20px 16px 16px;background:var(--surface);border:0.5px solid var(--border2);border-radius:20px;position:relative;overflow:hidden}
+.big-temp::before{content:'';position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:180px;height:180px;background:radial-gradient(circle,rgba(126,255,196,0.07) 0%,transparent 70%);pointer-events:none}
+.weather-emoji{font-size:30px;display:block;margin-bottom:2px}
+.big-temp-val{font-family:var(--head);font-size:62px;font-weight:700;line-height:1;letter-spacing:-3px}
+.big-temp-val .unit{font-size:26px;color:var(--muted);vertical-align:super;letter-spacing:0}
+.condition-text{font-size:12px;color:var(--accent);font-weight:600;margin-top:5px;letter-spacing:0.1em;text-transform:uppercase}
+.feels-like{font-size:11px;color:var(--text);opacity:0.7;margin-top:3px}
+
+/* LUCHTKWALITEIT BAR */
+.aqi-bar{display:flex;align-items:center;gap:10px;margin-top:10px;background:var(--surface2);border-radius:10px;padding:8px 12px}
+.aqi-label{font-size:10px;color:var(--muted)}
+.aqi-track{flex:1;height:6px;border-radius:6px;background:linear-gradient(90deg,#7effc4 0%,#ffff00 30%,#ffb347 55%,#ff6b6b 75%,#9f2424 90%,#7b1113 100%);overflow:hidden;position:relative}
+.aqi-needle{position:absolute;top:-2px;width:10px;height:10px;background:white;border-radius:50%;transform:translateX(-50%);border:2px solid var(--bg);transition:left .8s ease;box-shadow:0 0 4px rgba(255,255,255,0.5)}
+.aqi-val{font-family:var(--head);font-size:13px;font-weight:700;min-width:36px;text-align:right}
+.aqi-cat{font-size:10px;color:var(--muted)}
+
+/* GAUGE CARDS */
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
+.metric-card{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:11px 13px 9px;position:relative;overflow:hidden}
+.metric-label{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px}
+.metric-val{font-family:var(--head);font-size:19px;font-weight:600;line-height:1}
+.metric-unit{font-size:10px;color:var(--muted);font-family:var(--mono);font-weight:300}
+.gauge-wrap{margin-top:7px}
+.gauge-track{height:3px;background:var(--border2);border-radius:3px;overflow:hidden}
+.gauge-fill{height:100%;border-radius:3px;transition:width .8s ease}
+.gauge-labels{display:flex;justify-content:space-between;font-size:8px;color:var(--muted);margin-top:2px}
+.card-icon{position:absolute;top:9px;right:11px;font-size:17px;opacity:0.22}
+
+/* KAART */
+.map-container{border-radius:16px;overflow:hidden;border:0.5px solid var(--border2);height:210px;position:relative}
+#weather-map{height:100%;width:100%}
+.tab-row{display:flex;gap:5px;margin-bottom:7px;overflow-x:auto;padding-bottom:2px}
+.tab-row::-webkit-scrollbar{display:none}
+.tab-btn{flex-shrink:0;padding:6px 10px;background:var(--surface);border:0.5px solid var(--border);border-radius:9px;font-size:10px;color:var(--muted);cursor:pointer;font-family:var(--mono);white-space:nowrap}
+.tab-btn.active{color:var(--accent);border-color:rgba(126,255,196,0.3);background:rgba(126,255,196,0.05)}
+.map-legend{position:absolute;top:9px;right:9px;z-index:500;background:rgba(10,10,15,0.85);border:0.5px solid var(--border2);border-radius:8px;padding:5px 9px;font-size:11px;color:var(--text);backdrop-filter:blur(4px)}
+
+/* AARDBEVINGEN */
+.quake-list{display:flex;flex-direction:column;gap:6px}
+.quake-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:9px 12px}
+.quake-mag{font-family:var(--head);font-size:16px;font-weight:700;min-width:32px;text-align:center}
+.quake-info{flex:1}
+.quake-place{font-size:12px;color:var(--text);font-weight:500}
+.quake-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.quake-badge{font-size:9px;padding:2px 7px;border-radius:20px;white-space:nowrap}
+.mag-low{color:var(--accent);background:rgba(126,255,196,0.1);border:0.5px solid rgba(126,255,196,0.2)}
+.mag-med{color:var(--warn);background:rgba(255,179,71,0.1);border:0.5px solid rgba(255,179,71,0.2)}
+.mag-high{color:var(--err);background:rgba(255,107,107,0.1);border:0.5px solid rgba(255,107,107,0.2)}
+
+/* NEERSLAG */
+.precip-chart{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:11px 11px 7px}
+.precip-bars{display:flex;align-items:flex-end;gap:3px;height:44px;margin-bottom:4px}
+.precip-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.precip-bar{width:100%;background:var(--accent2);border-radius:2px 2px 0 0;min-height:2px;opacity:0.65}
+.precip-bar.heavy{background:var(--warn);opacity:.85}
+.precip-bar.extreme{background:var(--err)}
+.precip-lbl{font-size:9px;color:var(--muted);text-align:center}
+
+/* BRONNEN */
+.source-row{display:flex;align-items:center;padding:8px 11px;background:var(--surface);border:0.5px solid var(--border);border-radius:10px;margin-bottom:4px;gap:8px}
+.source-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.source-name{flex:1;color:var(--text);font-size:11px}
+.source-vals{font-size:11px;color:var(--text)}
+.source-badge{font-size:10px;padding:2px 7px;border-radius:20px;white-space:nowrap}
+.badge-ok{background:rgba(126,255,196,0.1);color:var(--accent);border:0.5px solid rgba(126,255,196,0.2)}
+.badge-err{background:rgba(255,107,107,0.1);color:var(--err);border:0.5px solid rgba(255,107,107,0.2)}
+.badge-wait{background:rgba(255,179,71,0.1);color:var(--warn);border:0.5px solid rgba(255,179,71,0.2)}
+.avg-row{display:flex;align-items:center;padding:9px 11px;background:rgba(126,255,196,0.05);border:0.5px solid rgba(126,255,196,0.15);border-radius:10px;margin-top:5px;gap:8px}
+.avg-label{flex:1;font-family:var(--head);font-weight:700;font-size:11px;color:var(--accent);letter-spacing:0.06em;text-transform:uppercase}
+.avg-vals{display:flex;gap:8px;color:var(--accent);font-size:11px}
+
+.detail-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border)}
+.detail-row:last-child{border-bottom:none}
+.detail-key{color:var(--text);font-size:11px;font-weight:500}
+.detail-v{color:var(--text);font-family:var(--head);font-weight:600;font-size:12px}
+
+.status-bar{font-size:10px;color:var(--muted);text-align:center;margin-top:14px;letter-spacing:0.04em;line-height:1.8}
+.leaflet-control-attribution{display:none!important}
+.leaflet-control-zoom{display:none}
+
+/* FAVORIETEN */
+.fav-section{margin-bottom:12px}
+.fav-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:32px}
+.fav-chip{display:flex;align-items:center;gap:5px;background:var(--surface2);border:0.5px solid var(--border2);border-radius:20px;padding:5px 10px 5px 12px;font-size:11px;color:var(--text);cursor:pointer;transition:border-color .15s;white-space:nowrap}
+.fav-chip:active{background:var(--surface)}
+.fav-chip .fav-name{max-width:100px;overflow:hidden;text-overflow:ellipsis}
+.fav-chip .fav-del{color:var(--dim);font-size:13px;line-height:1;padding:0 2px;margin-left:2px}
+.fav-chip .fav-del:hover{color:var(--err)}
+.fav-add-btn{background:transparent;border:0.5px dashed var(--border2);border-radius:20px;padding:5px 12px;font-size:11px;color:var(--muted);cursor:pointer;white-space:nowrap;font-family:var(--mono)}
+.fav-add-btn:active{border-color:var(--accent);color:var(--accent)}
+.fav-empty{font-size:11px;color:var(--dim);font-style:italic}
 </style>
 </head>
 <body>
 
-<div id="ffmpeg-loading">
-  <div class="loading-spinner"></div>
-  <div class="loading-text">Loading conversion engine</div>
-  <div class="loading-sub">This happens once — about 30 seconds</div>
+<div class="header">
+  <div>
+    <h1>Divine Weather</h1>
+    <p class="tagline">Wereldwijd · 10 bronnen · Live radar · Gevaren</p>
+  </div>
+  <button class="refresh-btn" id="refresh-btn" onclick="doFetch()" aria-label="Vernieuwen">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+  </button>
 </div>
 
-<header>
-  <div class="logo">
-    <div class="logo-eyebrow">Divine Monday — <span>Studio Tools</span></div>
-    <h1>Divine <span>Converter</span></h1>
-    <div class="logo-sub">Convert anything. Keep control.</div>
+<div class="loc-input-wrap">
+  <div class="loc-wrap">
+    <input class="loc-input" id="loc-input" type="text" placeholder="Stad, postcode of land — overal ter wereld…" autocomplete="off" oninput="onLocInput()" onkeydown="onLocKey(event)">
+    <div class="suggest-list" id="suggest-list"></div>
   </div>
-  <div class="status-bar">
-    <div id="engine-status">
-      <span class="dot"></span>
-      <span id="engine-text">Engine not loaded</span>
-    </div>
+  <button class="loc-gps-btn" id="gps-btn" onclick="useGPS()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>GPS
+  </button>
+</div>
+<div class="loc-resolved" id="loc-resolved" style="display:none;">
+  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+  <span id="loc-resolved-text"></span>
+</div>
+
+
+<div class="fav-section" id="fav-section">
+  <div class="fav-row" id="fav-row">
+    <span class="fav-empty" id="fav-empty">Nog geen favorieten — sla huidige locatie op na ophalen</span>
   </div>
-</header>
+</div>
+<button class="fetch-btn" id="fetch-btn" onclick="doFetch()">Weer + Gevaren ophalen</button>
+<div class="progress-track"><div class="progress-fill" id="progress"></div></div>
 
-<main>
+<div id="data-view" style="display:none;">
 
-  <!-- DROP ZONE -->
-  <div class="drop-zone" id="drop-zone">
-    <input type="file" id="file-input" onchange="handleFile(this.files[0])" />
-    <div class="drop-icon">⬆</div>
-    <h2>Drop your file here</h2>
-    <p>Video · Audio · Image — any format</p>
-    <div class="file-name" id="file-name"></div>
-  </div>
-
-  <!-- CONTROLS -->
-  <div class="controls" id="controls">
-
-    <!-- OUTPUT FORMAT -->
-    <div>
-      <div class="section-label">Convert to</div>
-      <div class="format-grid" id="format-grid"></div>
-    </div>
-
-    <!-- STREAM OPTIONS (video only) -->
-    <div id="stream-section" style="display:none;">
-      <div class="section-label">What to keep</div>
-      <div class="options-row">
-        <button class="opt-btn selected" id="opt-video-audio" onclick="setStream('both')">🎬 Video + Audio</button>
-        <button class="opt-btn" id="opt-video-only" onclick="setStream('video')">🎥 Video only (no sound)</button>
-        <button class="opt-btn" id="opt-audio-only" onclick="setStream('audio')">🔊 Audio only (no video)</button>
-      </div>
-    </div>
-
-    <!-- QUALITY -->
-    <div id="quality-section">
-      <div class="section-label">Quality</div>
-      <div class="quality-row">
-        <input type="range" id="quality-slider" min="1" max="3" step="1" value="2" oninput="updateQualityLabel(this.value)" />
-        <span class="quality-label" id="quality-label">Medium</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px;">
-        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--mid);">Smaller file</span>
-        <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--mid);">Highest quality</span>
-      </div>
-    </div>
-
-    <!-- SOCIAL PRESETS -->
-    <div id="preset-section">
-      <div class="section-label">Optimise for platform — or skip</div>
-      <div class="preset-grid">
-        <button class="preset-btn" onclick="setPreset('none', this)">
-          <span class="preset-name">No preset</span>
-          <span class="preset-detail">Custom settings</span>
-        </button>
-        <button class="preset-btn" onclick="setPreset('whatsapp', this)">
-          <span class="preset-name">WhatsApp</span>
-          <span class="preset-detail">max 16MB · mp4</span>
-        </button>
-        <button class="preset-btn" onclick="setPreset('signal', this)">
-          <span class="preset-name">Signal</span>
-          <span class="preset-detail">max 100MB · mp4</span>
-        </button>
-        <button class="preset-btn" onclick="setPreset('telegram', this)">
-          <span class="preset-name">Telegram</span>
-          <span class="preset-detail">max 2GB · mp4</span>
-        </button>
-        <button class="preset-btn" onclick="setPreset('instagram', this)">
-          <span class="preset-name">Instagram</span>
-          <span class="preset-detail">1080p · mp4</span>
-        </button>
-        <button class="preset-btn" onclick="setPreset('tiktok', this)">
-          <span class="preset-name">TikTok</span>
-          <span class="preset-detail">1080×1920 · mp4</span>
-        </button>
-        <button class="preset-btn" onclick="setPreset('youtube', this)">
-          <span class="preset-name">YouTube</span>
-          <span class="preset-detail">1080p · mp4</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <!-- CONVERT -->
-    <div class="convert-wrap">
-      <button class="btn-convert" id="convert-btn" onclick="startConvert()" disabled>
-        <span id="convert-btn-text">Convert</span>
-      </button>
-    </div>
-
-    <!-- PROGRESS -->
-    <div class="progress-wrap" id="progress-wrap">
-      <div class="progress-label">
-        <span id="progress-step">Converting…</span>
-        <span id="progress-pct">0%</span>
-      </div>
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" id="progress-fill"></div>
-      </div>
-      <div class="progress-log" id="progress-log"></div>
-    </div>
-
-    <!-- RESULT -->
-    <div class="result-box" id="result-box">
-      <h3>✦ Done. Your file is ready.</h3>
-      <div class="result-meta" id="result-meta"></div>
-      <a class="btn-download" id="download-btn" download>Download</a>
-      <button class="btn-reset" onclick="resetAll()">Convert another</button>
-    </div>
-
-    <!-- NOTE -->
-    <div class="note-box">
-      <strong>Everything stays on your machine.</strong> No files are uploaded anywhere. The conversion engine runs entirely in your browser using WebAssembly. Large files take longer — a 200MB video may take a few minutes.
-    </div>
-
+  <!-- ALERTS PANEEL (wereldwijd) -->
+  <div class="alerts-panel mb16" id="alerts-panel">
+    <div class="section-label">⚠ Actuele gevaren in jouw regio</div>
+    <div id="alerts-list"></div>
   </div>
 
-</main>
+  <!-- GROTE TEMP + AQI -->
+  <div class="big-temp mb16">
+    <span class="weather-emoji" id="main-emoji">⛅</span>
+    <div class="big-temp-val"><span id="main-temp">—</span><span class="unit">°C</span></div>
+    <div class="condition-text" id="main-condition"></div>
+    <div class="feels-like" id="main-feels"></div>
+    <div class="aqi-bar" id="aqi-bar" style="display:none;">
+      <span class="aqi-label">Lucht<br>kwaliteit</span>
+      <div class="aqi-track"><div class="aqi-needle" id="aqi-needle" style="left:0%"></div></div>
+      <div>
+        <div class="aqi-val" id="aqi-val">—</div>
+        <div class="aqi-cat" id="aqi-cat"></div>
+      </div>
+    </div>
+  </div>
 
-<!-- COI Service Worker — fixes SharedArrayBuffer on GitHub Pages -->
+  <!-- GAUGE METRICS -->
+  <div class="metrics-grid mb16">
+    <div class="metric-card">
+      <span class="card-icon">💧</span>
+      <div class="metric-label">Luchtvochtigheid</div>
+      <div class="metric-val"><span id="m-hum">—</span><span class="metric-unit"> %</span></div>
+      <div class="gauge-wrap"><div class="gauge-track"><div class="gauge-fill" id="g-hum" style="background:var(--accent2)"></div></div><div class="gauge-labels"><span>0</span><span>100%</span></div></div>
+    </div>
+    <div class="metric-card">
+      <span class="card-icon">🌬</span>
+      <div class="metric-label">Windsnelheid</div>
+      <div class="metric-val"><span id="m-wind">—</span><span class="metric-unit"> km/h</span></div>
+      <div class="gauge-wrap"><div class="gauge-track"><div class="gauge-fill" id="g-wind" style="background:var(--purple)"></div></div><div class="gauge-labels"><span>0</span><span>120 km/h</span></div></div>
+    </div>
+    <div class="metric-card">
+      <span class="card-icon">⏱</span>
+      <div class="metric-label">Luchtdruk</div>
+      <div class="metric-val"><span id="m-pres">—</span><span class="metric-unit"> hPa</span></div>
+      <div class="gauge-wrap"><div class="gauge-track"><div class="gauge-fill" id="g-pres" style="background:var(--orange)"></div></div><div class="gauge-labels"><span>970</span><span>1050</span></div></div>
+    </div>
+    <div class="metric-card">
+      <span class="card-icon">👁</span>
+      <div class="metric-label">Zichtbaarheid</div>
+      <div class="metric-val"><span id="m-vis">—</span><span class="metric-unit"> km</span></div>
+      <div class="gauge-wrap"><div class="gauge-track"><div class="gauge-fill" id="g-vis" style="background:var(--pink)"></div></div><div class="gauge-labels"><span>0</span><span>10 km</span></div></div>
+    </div>
+    <div class="metric-card">
+      <span class="card-icon">☁</span>
+      <div class="metric-label">Bewolking</div>
+      <div class="metric-val"><span id="m-cloud">—</span><span class="metric-unit"> %</span></div>
+      <div class="gauge-wrap"><div class="gauge-track"><div class="gauge-fill" id="g-cloud" style="background:#94a3b8"></div></div><div class="gauge-labels"><span>helder</span><span>dicht</span></div></div>
+    </div>
+    <div class="metric-card">
+      <span class="card-icon">☀</span>
+      <div class="metric-label">UV-index</div>
+      <div class="metric-val"><span id="m-uv">—</span></div>
+      <div class="gauge-wrap"><div class="gauge-track"><div class="gauge-fill" id="g-uv" style="background:linear-gradient(90deg,#7effc4,#ffb347,#ff6b6b)"></div></div><div class="gauge-labels"><span>laag</span><span>gevaar</span></div></div>
+    </div>
+    <div class="metric-card">
+      <span class="card-icon">🌧</span>
+      <div class="metric-label">Neerslag (1u)</div>
+      <div class="metric-val"><span id="m-rain">—</span><span class="metric-unit"> mm</span></div>
+      <div class="gauge-wrap"><div class="gauge-track"><div class="gauge-fill" id="g-rain" style="background:var(--blue)"></div></div><div class="gauge-labels"><span>droog</span><span>zwaar</span></div></div>
+    </div>
+    <div class="metric-card">
+      <span class="card-icon">💨</span>
+      <div class="metric-label">Windstoten</div>
+      <div class="metric-val"><span id="m-gust">—</span><span class="metric-unit"> km/h</span></div>
+      <div class="gauge-wrap"><div class="gauge-track"><div class="gauge-fill" id="g-gust" style="background:var(--err)"></div></div><div class="gauge-labels"><span>0</span><span>150 km/h</span></div></div>
+    </div>
+  </div>
+
+  <!-- LIVE KAART -->
+  <div class="mb16">
+    <div class="section-label">Live neerslag radar</div>
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="setLayer('radar')" id="tab-radar">🌧 Neerslag radar</button>
+    </div>
+    <div class="map-container">
+      <div id="weather-map"></div>
+      <div class="map-legend" id="map-legend">🌧 Neerslag radar — actueel</div>
+      <div id="map-time" style="position:absolute;bottom:9px;left:9px;z-index:500;background:rgba(10,10,15,0.85);border:0.5px solid var(--border2);border-radius:8px;padding:4px 9px;font-size:11px;color:var(--accent2);font-weight:500;backdrop-filter:blur(4px);font-family:var(--mono)"></div>
+      <div id="map-anim-btn" onclick="toggleAnim()" style="position:absolute;bottom:9px;right:9px;z-index:500;background:rgba(10,10,15,0.85);border:0.5px solid var(--border2);border-radius:8px;padding:4px 10px;font-size:11px;color:var(--text);cursor:pointer;backdrop-filter:blur(4px)">▶ Animeren</div>
+    </div>
+  </div>
+
+  <!-- NEERSLAG 12 UUR -->
+  <div class="mb16" id="precip-section" style="display:none;">
+    <div class="section-label">Neerslag komende 12 uur</div>
+    <div class="precip-chart"><div class="precip-bars" id="precip-bars"></div></div>
+  </div>
+
+  <!-- AARDBEVINGEN -->
+  <div class="mb16" id="quake-section">
+    <div class="section-label">🌍 Aardbevingen nabij jouw locatie (30 dagen)</div>
+    <div class="quake-list" id="quake-list"><div style="font-size:11px;color:var(--dim);padding:8px 0;">Ophalen…</div></div>
+  </div>
+
+  <!-- BRONNEN -->
+  <div class="mb16">
+    <div class="section-label">Weerbronnen</div>
+    <div id="source-list"></div>
+    <div class="avg-row" id="avg-row" style="display:none;">
+      <span class="avg-label">Gemiddelde</span>
+      <span class="avg-vals"><span id="a-temp">—</span><span style="opacity:.3">·</span><span id="a-hum">—</span><span style="opacity:.3">·</span><span id="a-wind">—</span></span>
+    </div>
+  </div>
+
+  <!-- EXTRA DETAILS -->
+  <div class="mb16" id="detail-section" style="display:none;">
+    <div class="section-label">Alle meetwaarden</div>
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:4px 14px;" id="detail-list"></div>
+  </div>
+
+</div>
+
+<div class="status-bar" id="status">Voer een stad in of gebruik GPS → "Weer + Gevaren ophalen"</div>
+
 <script>
-if (typeof window !== "undefined") {
-  if (window.crossOriginIsolated === false && navigator.serviceWorker) {
-    const swCode = `
-      self.addEventListener("install", () => self.skipWaiting());
-      self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
-      self.addEventListener("fetch", (e) => {
-        if (e.request.cache === "only-if-cached" && e.request.mode !== "same-origin") return;
-        e.respondWith(
-          fetch(e.request).then((r) => {
-            if (r.status === 0) return r;
-            const h = new Headers(r.headers);
-            h.set("Cross-Origin-Embedder-Policy", "require-corp");
-            h.set("Cross-Origin-Opener-Policy", "same-origin");
-            return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
-          }).catch(console.error)
-        );
-      });
-    `;
-    const blob = new Blob([swCode], { type: 'application/javascript' });
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl).then((reg) => {
-      reg.addEventListener("updatefound", () => window.location.reload());
-      if (reg.active) window.location.reload();
-    });
-  }
+// =================== HELPERS ===================
+const avg=a=>{const v=a.filter(x=>x!=null&&!isNaN(x));return v.length?v.reduce((a,b)=>a+b,0)/v.length:null};
+const fmt=(v,d=1)=>(v==null||isNaN(v))?"—":Number(v).toFixed(d);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const setP=p=>{document.getElementById("progress").style.width=p+"%"};
+const setS=t=>{document.getElementById("status").textContent=t};
+const WMO={0:"Helder",1:"Overwegend helder",2:"Gedeeltelijk bewolkt",3:"Bewolkt",45:"Mist",48:"IJsmist",51:"Lichte motregen",53:"Motregen",55:"Zware motregen",61:"Lichte regen",63:"Regen",65:"Zware regen",71:"Lichte sneeuw",73:"Sneeuw",75:"Zware sneeuw",80:"Lichte buien",81:"Buien",82:"Zware buien",85:"Sneeuwbuien",95:"Onweer",96:"Onweer+hagel",99:"Zwaar onweer"};
+const EMO={0:"☀️",1:"🌤",2:"⛅",3:"☁️",45:"🌫",48:"🌫",51:"🌦",53:"🌦",55:"🌧",61:"🌧",63:"🌧",65:"⛈",71:"🌨",73:"❄️",75:"❄️",80:"🌦",81:"🌧",82:"⛈",95:"⛈",96:"⛈",99:"⛈"};
+const wDir=d=>{if(d==null||isNaN(d))return"—";return["N","NO","O","ZO","Z","ZW","W","NW"][Math.round(d/45)%8]};
+
+// =================== LOCATIE ===================
+let rLat=null,rLon=null,rName=null,sugTimer=null;
+function onLocInput(){const q=document.getElementById("loc-input").value.trim();rLat=null;rLon=null;rName=null;document.getElementById("loc-resolved").style.display="none";clearTimeout(sugTimer);if(q.length<2){hideSug();return}sugTimer=setTimeout(()=>searchPlaces(q),350)}
+async function searchPlaces(q){try{const d=await(await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=1`)).json();if(!d.length){hideSug();return}const list=document.getElementById("suggest-list");list.innerHTML="";d.forEach(r=>{const a=r.address,label=(a.city||a.town||a.village||a.county||r.display_name.split(",")[0])+(a.country?", "+a.country:"");const item=document.createElement("div");item.className="suggest-item";item.textContent=label;item.onclick=()=>{rLat=parseFloat(r.lat);rLon=parseFloat(r.lon);rName=label;document.getElementById("loc-input").value=label;hideSug();showRes(label)};list.appendChild(item)});list.style.display="block"}catch{hideSug()}}
+function hideSug(){document.getElementById("suggest-list").style.display="none"}
+function showRes(n){document.getElementById("loc-resolved-text").textContent=n;document.getElementById("loc-resolved").style.display="flex"}
+function onLocKey(e){if(e.key==="Enter"){hideSug();if(!rLat){const q=document.getElementById("loc-input").value.trim();if(q)geocodeManual(q)}}}
+async function geocodeManual(q){setS("Locatie opzoeken…");try{const d=await(await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`)).json();if(d.length){rLat=parseFloat(d[0].lat);rLon=parseFloat(d[0].lon);rName=d[0].display_name.split(",").slice(0,2).join(",").trim();showRes(rName);setS("Gevonden.")}else setS("Niet gevonden.")}catch{setS("Fout bij zoeken.")}}
+async function useGPS(){const btn=document.getElementById("gps-btn");btn.style.opacity="0.4";btn.style.pointerEvents="none";setS("GPS…");try{const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:9000}));rLat=pos.coords.latitude;rLon=pos.coords.longitude;try{const g=await(await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${rLat}&lon=${rLon}&format=json`)).json();rName=g.address.city||g.address.town||g.address.village||g.address.suburb||`${rLat.toFixed(3)}, ${rLon.toFixed(3)}`}catch{rName=`${rLat.toFixed(3)}, ${rLon.toFixed(3)}`}document.getElementById("loc-input").value=rName;showRes(rName);setS("GPS gevonden.")}catch{setS("GPS niet beschikbaar.")}btn.style.opacity="";btn.style.pointerEvents=""}
+
+// =================== WEERBRONNEN ===================
+const SRCS=[
+  {name:"Open-Meteo GFS",    color:"#7effc4"},
+  {name:"Open-Meteo ECMWF", color:"#4fd9ff"},
+  {name:"Open-Meteo ICON",  color:"#c4b5fd"},
+  {name:"Open-Meteo ERA5",  color:"#a78bfa"},
+  {name:"wttr.in",           color:"#ffb347"},
+  {name:"7Timer",            color:"#f9a8d4"},
+  {name:"Buienradar",        color:"#60a5fa"},
+  {name:"MET Norway",        color:"#34d399"},
+  {name:"NOAA GFS",          color:"#fb923c"},
+  {name:"OM Best-match",     color:"#e2e8f0"},
+];
+
+async function omFetch(lat,lon,model,fields){
+  const d=await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=${fields.join(",")}&wind_speed_unit=kmh&timezone=auto${model?"&models="+model:""}`)).json();
+  return d.current;
 }
-</script>
+async function fetchOM_GFS(lat,lon){const c=await omFetch(lat,lon,"gfs_seamless",["temperature_2m","relative_humidity_2m","apparent_temperature","weather_code","wind_speed_10m","wind_direction_10m","wind_gusts_10m","pressure_msl","cloud_cover","visibility","dew_point_2m","uv_index","precipitation"]);return{temp:c.temperature_2m,humidity:c.relative_humidity_2m,feelslike:c.apparent_temperature,windspeed:c.wind_speed_10m,winddir:c.wind_direction_10m,windgust:c.wind_gusts_10m,pressure:c.pressure_msl,cloudcover:c.cloud_cover,visibility:c.visibility/1000,dewpoint:c.dew_point_2m,uv:c.uv_index,rain:c.precipitation,wcode:c.weather_code,condition:WMO[c.weather_code]}}
+async function fetchOM_ECMWF(lat,lon){const c=await omFetch(lat,lon,"ecmwf_ifs025",["temperature_2m","relative_humidity_2m","apparent_temperature","wind_speed_10m","wind_gusts_10m","pressure_msl","cloud_cover","precipitation"]);return{temp:c.temperature_2m,humidity:c.relative_humidity_2m,feelslike:c.apparent_temperature,windspeed:c.wind_speed_10m,windgust:c.wind_gusts_10m,pressure:c.pressure_msl,cloudcover:c.cloud_cover,rain:c.precipitation,visibility:null,dewpoint:null,uv:null,winddir:null,wcode:null,condition:null}}
+async function fetchOM_ICON(lat,lon){const c=await omFetch(lat,lon,"icon_seamless",["temperature_2m","relative_humidity_2m","apparent_temperature","weather_code","wind_speed_10m","wind_direction_10m","wind_gusts_10m","pressure_msl","cloud_cover","visibility","dew_point_2m","precipitation"]);return{temp:c.temperature_2m,humidity:c.relative_humidity_2m,feelslike:c.apparent_temperature,windspeed:c.wind_speed_10m,winddir:c.wind_direction_10m,windgust:c.wind_gusts_10m,pressure:c.pressure_msl,cloudcover:c.cloud_cover,visibility:c.visibility/1000,dewpoint:c.dew_point_2m,rain:c.precipitation,uv:null,wcode:c.weather_code,condition:WMO[c.weather_code]}}
+async function fetchOM_ERA5(lat,lon){const c=await omFetch(lat,lon,"era5_seamless",["temperature_2m","relative_humidity_2m","wind_speed_10m","pressure_msl","cloud_cover"]);return{temp:c.temperature_2m,humidity:c.relative_humidity_2m,windspeed:c.wind_speed_10m,pressure:c.pressure_msl,cloudcover:c.cloud_cover,feelslike:null,winddir:null,windgust:null,visibility:null,dewpoint:null,uv:null,rain:null,wcode:null,condition:null}}
+async function fetchWttr(lat,lon){const c=(await(await fetch(`https://wttr.in/${lat},${lon}?format=j1`)).json()).current_condition[0];return{temp:parseFloat(c.temp_C),humidity:parseFloat(c.humidity),feelslike:parseFloat(c.FeelsLikeC),windspeed:parseFloat(c.windspeedKmph),winddir:parseFloat(c.winddirDegree),windgust:null,pressure:parseFloat(c.pressure),cloudcover:parseFloat(c.cloudcover),visibility:parseFloat(c.visibility),dewpoint:parseFloat(c.DewPointC),uv:parseFloat(c.uvIndex),rain:null,wcode:null,condition:c.weatherDesc[0].value}}
+async function fetch7Timer(lat,lon){const d=await(await fetch(`https://www.7timer.info/bin/api.pl?lon=${lon}&lat=${lat}&product=civil&output=json`)).json();const c=d.dataseries[0];const bft=[1,5,12,20,29,39,50,61,74,88,103,117,130];return{temp:c.temp2m,humidity:null,feelslike:null,windspeed:bft[Math.min(c.wind10m?.speed||0,12)],winddir:null,windgust:null,pressure:null,cloudcover:c.cloudcover*10,visibility:null,dewpoint:null,uv:null,rain:c.prec_amount||0,wcode:null,condition:null}}
+async function fetchBuienradar(lat,lon){const d=await(await fetch("https://data.buienradar.nl/2.0/feed/json")).json();const st=d.actual.stationmeasurements;let best=null,bd=Infinity;st.forEach(s=>{const dd=Math.hypot(s.lat-lat,s.lon-lon);if(dd<bd){bd=dd;best=s}});if(!best||bd>3)return null;const dm={N:0,NNO:22,NO:45,ONO:67,O:90,OZO:112,ZO:135,ZZO:157,Z:180,ZZW:202,ZW:225,WZW:247,W:270,WNW:292,NW:315,NNW:337};return{temp:best.temperature,humidity:best.humidity,feelslike:best.feeltemperature,windspeed:best.windspeed||best.windspeedBft*3.6,winddir:dm[best.winddirection]||null,windgust:best.windgusts,pressure:best.airpressure,cloudcover:null,visibility:null,dewpoint:null,uv:null,rain:best.precipitation,wcode:null,condition:null,station:best.stationname}}
+async function fetchMET(lat,lon){const d=await(await fetch(`https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`,{headers:{"User-Agent":"WeerPlusApp/2.0"}})).json();const c=d.properties.timeseries[0].data.instant.details;return{temp:c.air_temperature,humidity:c.relative_humidity,feelslike:null,windspeed:c.wind_speed*3.6,winddir:c.wind_from_direction,windgust:c.wind_speed_of_gust?c.wind_speed_of_gust*3.6:null,pressure:c.air_pressure_at_sea_level,cloudcover:c.cloud_area_fraction,visibility:null,dewpoint:c.dew_point_temperature,uv:c.ultraviolet_index_clear_sky||null,rain:d.properties.timeseries[0].data.next_1_hours?.details?.precipitation_amount||null,wcode:null,condition:null}}
+async function fetchNOAA(lat,lon){const c=await omFetch(lat,lon,"gfs025",["temperature_2m","relative_humidity_2m","wind_speed_10m","wind_gusts_10m","pressure_msl","cloud_cover","precipitation"]);return{temp:c.temperature_2m,humidity:c.relative_humidity_2m,windspeed:c.wind_speed_10m,windgust:c.wind_gusts_10m,pressure:c.pressure_msl,cloudcover:c.cloud_cover,rain:c.precipitation,feelslike:null,winddir:null,visibility:null,dewpoint:null,uv:null,wcode:null,condition:null}}
+async function fetchOMBest(lat,lon){const c=await omFetch(lat,lon,"best_match",["temperature_2m","relative_humidity_2m","apparent_temperature","weather_code","wind_speed_10m","wind_direction_10m","wind_gusts_10m","pressure_msl","cloud_cover","visibility","precipitation"]);return{temp:c.temperature_2m,humidity:c.relative_humidity_2m,feelslike:c.apparent_temperature,windspeed:c.wind_speed_10m,winddir:c.wind_direction_10m,windgust:c.wind_gusts_10m,pressure:c.pressure_msl,cloudcover:c.cloud_cover,visibility:c.visibility/1000,rain:c.precipitation,dewpoint:null,uv:null,wcode:c.weather_code,condition:WMO[c.weather_code]}}
+const FETCHERS=[fetchOM_GFS,fetchOM_ECMWF,fetchOM_ICON,fetchOM_ERA5,fetchWttr,fetch7Timer,fetchBuienradar,fetchMET,fetchNOAA,fetchOMBest];
 
-<!-- Load ffmpeg FIRST before any app code -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ffmpeg/0.11.6/ffmpeg.min.js"></script>
+// =================== LUCHTKWALITEIT ===================
+async function fetchAirQuality(lat,lon){
+  try{
+    const d=await(await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=european_aqi,us_aqi,pm10,pm2_5,nitrogen_dioxide,ozone,carbon_monoxide,dust`)).json();
+    const c=d.current;
+    return{eu_aqi:c.european_aqi,us_aqi:c.us_aqi,pm10:c.pm10,pm25:c.pm2_5,no2:c.nitrogen_dioxide,o3:c.ozone,co:c.carbon_monoxide,dust:c.dust};
+  }catch{return null}
+}
 
-<script>
-// ─── FFMPEG SETUP ────────────────────────────────────────────────────────────
-let ffmpeg = null;
-let inputFile = null;
-let outputUrl = null;
-let currentPreset = null;
-let streamMode = 'both';
+// =================== AARDBEVINGEN (USGS) ===================
+async function fetchEarthquakes(lat,lon){
+  try{
+    const end=new Date().toISOString().split("T")[0];
+    const start=new Date(Date.now()-30*24*3600*1000).toISOString().split("T")[0];
+    const url=`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${start}&endtime=${end}&latitude=${lat}&longitude=${lon}&maxradiuskm=500&minmagnitude=2.0&orderby=magnitude&limit=5`;
+    const d=await(await fetch(url)).json();
+    return d.features||[];
+  }catch{return[]}
+}
 
-async function initFFmpeg() {
-  document.getElementById('ffmpeg-loading').classList.add('show');
-  setEngineStatus('loading', 'Loading engine…');
-  try {
-    ffmpeg = FFmpeg.createFFmpeg({
-      log: true,
-      progress: ({ ratio }) => {
-        const pct = Math.min(Math.round(ratio * 100), 100);
-        document.getElementById('progress-fill').style.width = pct + '%';
-        document.getElementById('progress-pct').textContent = pct + '%';
-      },
-      logger: ({ message }) => {
-        const log = document.getElementById('progress-log');
-        if (log) {
-          const line = document.createElement('div');
-          line.textContent = message;
-          log.appendChild(line);
-          while (log.children.length > 3) log.removeChild(log.firstChild);
-        }
+// =================== GDACS MONDIALE RAMPEN ===================
+async function fetchGDACS(lat,lon){
+  // GDACS RSS feed via corsproxy — EU Joint Research Centre, gratis
+  try{
+    const rss=await(await fetch(`https://www.gdacs.org/xml/rss.xml`)).text();
+    const parser=new DOMParser();
+    const doc=parser.parseFromString(rss,"text/xml");
+    const items=Array.from(doc.querySelectorAll("item")).slice(0,30);
+    const alerts=[];
+    items.forEach(item=>{
+      const title=item.querySelector("title")?.textContent||"";
+      const desc=item.querySelector("description")?.textContent||"";
+      const link=item.querySelector("link")?.textContent||"";
+      // GDACS geeft geo:lat/lon of we zoeken op landnamen
+      const glat=parseFloat(item.getElementsByTagNameNS("*","lat")[0]?.textContent||item.querySelector("lat")?.textContent||"NaN");
+      const glon=parseFloat(item.getElementsByTagNameNS("*","long")[0]?.textContent||item.querySelector("long")?.textContent||"NaN");
+      let level="green";
+      if(title.toLowerCase().includes("red")||desc.toLowerCase().includes("red alert"))level="red";
+      else if(title.toLowerCase().includes("orange"))level="orange";
+      // Afstand berekenen — toon alleen events binnen 2000km
+      if(!isNaN(glat)&&!isNaN(glon)){
+        const dist=Math.sqrt(Math.pow(glat-lat,2)+Math.pow(glon-lon,2))*111;
+        if(dist<2000){alerts.push({title,desc:desc.replace(/<[^>]*>/g,"").substring(0,120),level,dist:Math.round(dist)})}
+      } else {
+        // Geen coördinaten → toon globale rode waarschuwingen altijd
+        if(level==="red")alerts.push({title,desc:desc.replace(/<[^>]*>/g,"").substring(0,120),level,dist:null});
       }
     });
-    await ffmpeg.load();
-    setEngineStatus('ready', 'Engine ready');
-    document.getElementById('ffmpeg-loading').classList.remove('show');
-  } catch (e) {
-    console.error(e);
-    setEngineStatus('error', 'Engine failed to load');
-    document.getElementById('ffmpeg-loading').classList.remove('show');
-    alert('The conversion engine could not load. Try opening this page via a local server or GitHub Pages — not directly from your hard drive.');
+    return alerts.slice(0,5);
+  }catch{return[]}
+}
+
+// =================== NEERSLAG UUR ===================
+async function fetchPrecip(lat,lon){
+  try{
+    const d=await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation&forecast_hours=12&timezone=auto`)).json();
+    return{amounts:d.hourly.precipitation.slice(0,12),times:d.hourly.time.slice(0,12)};
+  }catch{return null}
+}
+
+// =================== KAART (RainViewer — geen API key) ===================
+let map=null,curLayer="radar";
+let rvData=null,rvLayers=[],rvFrameIdx=0,rvAnimTimer=null,rvAnimating=false;
+
+async function initMap(lat,lon){
+  if(!map){
+    map=L.map("weather-map",{zoomControl:false,attributionControl:false}).setView([lat,lon],7);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:19}).addTo(map);
+  } else {
+    map.setView([lat,lon],7);
+  }
+  await loadRainViewer();
+  setLayer(curLayer);
+  if(window._mk) window._mk.remove();
+  window._mk = L.circleMarker([lat,lon],{
+    radius:7, color:"#7effc4", fillColor:"#7effc4", fillOpacity:1, weight:2
+  }).addTo(map);
+}
+
+async function loadRainViewer(){
+  try{
+    // Haal actuele frame-URLs op van RainViewer — geen key nodig
+    const d=await(await fetch("https://api.rainviewer.com/public/weather-maps.json")).json();
+    rvData=d;
+  }catch(e){console.warn("RainViewer fetch fout:",e)}
+}
+
+function clearRVLayers(){
+  rvLayers.forEach(l=>{if(map.hasLayer(l))map.removeLayer(l)});
+  rvLayers=[];
+  if(rvAnimTimer){clearInterval(rvAnimTimer);rvAnimTimer=null}
+  rvAnimating=false;
+  document.getElementById("map-anim-btn").textContent="▶ Animeren";
+}
+
+function setLayer(key){
+  curLayer=key;
+  ["radar","satellite"].forEach(k=>{document.getElementById("tab-"+k)?.classList.toggle("active",k===key)});
+  clearRVLayers();
+  if(!rvData||!map)return;
+
+  if(key==="radar"){
+    document.getElementById("map-legend").textContent="🌧 Neerslag radar — actueel";
+    // Meest recente frame tonen
+    const frames=rvData.radar?.past||[];
+    if(!frames.length)return;
+    const f=frames[frames.length-1]; // meest recent
+    const host=rvData.host;
+    // Kleurschema 2 = blauw-groen-geel-rood standaard neerslag
+    // smooth=1, snow=1
+    const url=`${host}${f.path}/512/{z}/{x}/{y}/2/1_1.png`;
+    const layer=L.tileLayer(url,{opacity:0.90,maxZoom:7,tileSize:512,zoomOffset:-1});
+    layer.addTo(map);
+    rvLayers=[layer];
+    rvFrameIdx=frames.length-1;
+    showFrameTime(f.time);
+    // Pre-load alle frames voor animatie
+    frames.forEach(fr=>{
+      const u=`${host}${fr.path}/512/{z}/{x}/{y}/2/1_1.png`;
+      const l=L.tileLayer(u,{opacity:0,maxZoom:7,tileSize:512,zoomOffset:-1});
+      l.addTo(map);
+      rvLayers.push(l);
+    });
+    // Verberg alle pre-loaded, toon alleen laatste
+    rvLayers.forEach((l,i)=>l.setOpacity(i===0?0.75:0));
+
+  } else if(key==="satellite"){
+    document.getElementById("map-legend").textContent="☁ Infrarood satelliet bewolking — actueel";
+    // RainViewer satellite: infrared
+    const frames=rvData.satellite?.infrared||[];
+    if(!frames.length){
+      document.getElementById("map-legend").textContent="☁ Satelliet — geen data beschikbaar";
+      return;
+    }
+    const f=frames[frames.length-1];
+    const host=rvData.host;
+    const url=`${host}${f.path}/512/{z}/{x}/{y}/0/0_0.png`;
+    const layer=L.tileLayer(url,{opacity:0.78,maxZoom:7,tileSize:512,zoomOffset:-1});
+    layer.addTo(map);
+    rvLayers=[layer];
+    rvFrameIdx=frames.length-1;
+    showFrameTime(f.time);
+    frames.forEach(fr=>{
+      const u=`${host}${fr.path}/512/{z}/{x}/{y}/0/0_0.png`;
+      const l=L.tileLayer(u,{opacity:0,maxZoom:7,tileSize:512,zoomOffset:-1});
+      l.addTo(map);
+      rvLayers.push(l);
+    });
+    rvLayers.forEach((l,i)=>l.setOpacity(i===0?0.7:0));
   }
 }
 
-function setEngineStatus(state, text) {
-  const el = document.getElementById('engine-status');
-  el.className = state;
-  document.getElementById('engine-text').textContent = text;
+function showFrameTime(ts){
+  const t=new Date(ts*1000);
+  const el=document.getElementById("map-time");
+  if(el)el.textContent=t.toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"})+" UTC";
 }
 
-// ─── FILE TYPES ───────────────────────────────────────────────────────────────
-const FORMAT_MAP = {
-  video: {
-    accepts: ['mp4','mov','avi','mkv','webm','flv','wmv','m4v','3gp','ts','mts'],
-    outputs: ['mp4','webm','mov','avi','mkv','mp3','aac','wav','m4a','ogg','flac']
-  },
-  audio: {
-    accepts: ['mp3','wav','aac','flac','ogg','m4a','wma','aiff','opus'],
-    outputs: ['mp3','wav','aac','flac','ogg','m4a','opus']
-  },
-  image: {
-    accepts: ['jpg','jpeg','png','gif','webp','bmp','tiff','svg'],
-    outputs: ['jpg','png','webp','gif','bmp']
+function toggleAnim(){
+  if(rvAnimating){
+    clearInterval(rvAnimTimer);rvAnimTimer=null;rvAnimating=false;
+    document.getElementById("map-anim-btn").textContent="▶ Animeren";
+    // Toon meest recente frame
+    const allFrames=curLayer==="radar"?rvData?.radar?.past||[]:rvData?.satellite?.infrared||[];
+    const realLayers=rvLayers.slice(1); // eerste is de "huidige" placeholder
+    realLayers.forEach((l,i)=>l.setOpacity(i===realLayers.length-1?0.75:0));
+    if(allFrames.length)showFrameTime(allFrames[allFrames.length-1].time);
+    return;
   }
-};
-
-function detectType(filename) {
-  const ext = filename.split('.').pop().toLowerCase();
-  for (const [type, data] of Object.entries(FORMAT_MAP)) {
-    if (data.accepts.includes(ext)) return type;
-  }
-  return null;
+  const allFrames=curLayer==="radar"?rvData?.radar?.past||[]:rvData?.satellite?.infrared||[];
+  const realLayers=rvLayers.slice(1);
+  if(!realLayers.length)return;
+  let idx=0;
+  rvAnimating=true;
+  document.getElementById("map-anim-btn").textContent="⏹ Stop";
+  rvAnimTimer=setInterval(()=>{
+    realLayers.forEach((l,i)=>l.setOpacity(i===idx?0.75:0));
+    showFrameTime(allFrames[idx]?.time||0);
+    idx=(idx+1)%realLayers.length;
+  },600);
 }
 
-// ─── FILE HANDLING ────────────────────────────────────────────────────────────
-const dropZone = document.getElementById('drop-zone');
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('drag-over');
-  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-});
+// =================== RENDER ===================
+function renderSrc(data){
+  const list=document.getElementById("source-list");list.innerHTML="";
+  SRCS.forEach((s,i)=>{
+    const d=data[i];
+    const badge=d===undefined?"wacht":d?"ok":"fout",bc=d===undefined?"badge-wait":d?"badge-ok":"badge-err";
+    const row=document.createElement("div");row.className="source-row";
+    row.innerHTML=`<span class="source-dot" style="background:${s.color}"></span><span class="source-name">${d?.station?s.name+" · "+d.station.slice(0,10):s.name}</span><span class="source-vals">${d&&d!==undefined?`${fmt(d.temp)}°C · ${fmt(d.humidity,0)}% · ${fmt(d.windspeed,0)}km/h`:""}</span><span class="source-badge ${bc}">${badge}</span>`;
+    list.appendChild(row);
+  });
+}
 
-function handleFile(file) {
-  if (!file) return;
-  inputFile = file;
-  const type = detectType(file.name);
-  document.getElementById('file-name').textContent = `${file.name}  ·  ${formatBytes(file.size)}`;
+function setGauge(id,pct){const el=document.getElementById(id);if(el)el.style.width=clamp(pct,0,100)+"%"}
 
-  if (!type) {
-    alert('This file type is not supported. Try a video, audio, or image file.');
+function updM(data){
+  const v=data.filter(Boolean);if(!v.length)return;
+  const mT=avg(v.map(d=>d.temp)),mH=avg(v.map(d=>d.humidity)),mW=avg(v.map(d=>d.windspeed)),mV=avg(v.map(d=>d.visibility)),mP=avg(v.map(d=>d.pressure)),mC=avg(v.map(d=>d.cloudcover)),mU=avg(v.map(d=>d.uv)),mF=avg(v.map(d=>d.feelslike)),mD=avg(v.map(d=>d.dewpoint)),mWd=avg(v.map(d=>d.winddir)),mG=avg(v.map(d=>d.windgust)),mR=avg(v.map(d=>d.rain));
+  const wc=v.find(d=>d.wcode!=null)?.wcode;
+  document.getElementById("main-temp").textContent=fmt(mT);
+  document.getElementById("main-emoji").textContent=wc!=null?(EMO[wc]||"🌡"):"🌡";
+  document.getElementById("main-condition").textContent=(v.find(d=>d.condition)?.condition||"").toUpperCase();
+  document.getElementById("main-feels").textContent=mF!=null?`Voelt als ${fmt(mF)}°C · Dauwpunt ${fmt(mD)}°C`:"";
+  document.getElementById("m-hum").textContent=fmt(mH,0);
+  document.getElementById("m-wind").textContent=fmt(mW,0);
+  document.getElementById("m-pres").textContent=fmt(mP,0);
+  document.getElementById("m-vis").textContent=fmt(mV,1);
+  document.getElementById("m-cloud").textContent=fmt(mC,0);
+  document.getElementById("m-uv").textContent=fmt(mU,1);
+  document.getElementById("m-rain").textContent=fmt(mR,1);
+  document.getElementById("m-gust").textContent=fmt(mG,0);
+  setGauge("g-hum",mH);setGauge("g-wind",(mW/120)*100);setGauge("g-pres",((mP-970)/(1050-970))*100);setGauge("g-vis",(mV/10)*100);setGauge("g-cloud",mC);setGauge("g-uv",(mU/11)*100);setGauge("g-rain",(mR/10)*100);setGauge("g-gust",(mG/150)*100);
+  document.getElementById("a-temp").textContent=fmt(mT)+"°C";
+  document.getElementById("a-hum").textContent=fmt(mH,0)+"%";
+  document.getElementById("a-wind").textContent=fmt(mW,0)+"km/h";
+  document.getElementById("avg-row").style.display="flex";
+  document.getElementById("detail-list").innerHTML=`
+    <div class="detail-row"><span class="detail-key">🧭 Windrichting</span><span class="detail-v">${wDir(mWd)}</span></div>
+    <div class="detail-row"><span class="detail-key">💧 Dauwpunt</span><span class="detail-v">${fmt(mD)} °C</span></div>
+    <div class="detail-row"><span class="detail-key">💨 Windstoten</span><span class="detail-v">${fmt(mG,0)} km/h</span></div>
+    <div class="detail-row"><span class="detail-key">🌡 Gevoelstemp.</span><span class="detail-v">${fmt(mF)} °C</span></div>
+    <div class="detail-row"><span class="detail-key">📊 Luchtdruk</span><span class="detail-v">${fmt(mP,0)} hPa</span></div>
+    <div class="detail-row"><span class="detail-key">👁 Zichtbaarheid</span><span class="detail-v">${fmt(mV,1)} km</span></div>
+    <div class="detail-row"><span class="detail-key">☀ UV-index</span><span class="detail-v">${fmt(mU,1)} ${mU!=null?mU<3?"(laag)":mU<6?"(matig)":mU<8?"(hoog)":"(gevaarlijk)":""}</span></div>
+    <div class="detail-row"><span class="detail-key">🌧 Neerslag 1u</span><span class="detail-v">${fmt(mR,1)} mm</span></div>
+    <div class="detail-row"><span class="detail-key">📡 Actieve bronnen</span><span class="detail-v">${v.length}/10</span></div>`;
+  document.getElementById("detail-section").style.display="block";
+}
+
+function showAQI(aq){
+  if(!aq)return;
+  const aqi=aq.eu_aqi||aq.us_aqi;
+  if(!aqi)return;
+  const pct=clamp((aqi/300)*100,0,100);
+  document.getElementById("aqi-needle").style.left=pct+"%";
+  document.getElementById("aqi-val").textContent=Math.round(aqi);
+  const cat=aqi<20?"Uitstekend":aqi<40?"Goed":aqi<60?"Matig":aqi<80?"Slecht":aqi<100?"Zeer slecht":"Gevaarlijk";
+  const col=aqi<20?"var(--accent)":aqi<60?"var(--warn)":"var(--err)";
+  document.getElementById("aqi-cat").textContent=cat;
+  document.getElementById("aqi-val").style.color=col;
+  document.getElementById("aqi-bar").style.display="flex";
+}
+
+function showAlerts(weatherAlerts, gdacsAlerts, quakes){
+  const list=document.getElementById("alerts-list");list.innerHTML="";
+  let hasAny=false;
+  // GDACS
+  gdacsAlerts.forEach(a=>{
+    const card=document.createElement("div");card.className=`alert-card ${a.level}`;
+    const icons={red:"🔴",orange:"🟠",green:"🟢"};
+    const dist=a.dist!=null?` · ${a.dist} km`:""
+    card.innerHTML=`<div class="alert-icon">${icons[a.level]||"⚠"}</div><div class="alert-content"><div class="alert-title">${a.title}</div><div class="alert-body">${a.desc}${dist}</div></div>`;
+    list.appendChild(card);hasAny=true;
+  });
+  // Aardbevingen als alert als M≥4.5
+  quakes.filter(q=>q.properties.mag>=4.5).forEach(q=>{
+    const p=q.properties;const dist=q._dist?` · ${Math.round(q._dist)} km`:""
+    const card=document.createElement("div");card.className="alert-card orange";
+    card.innerHTML=`<div class="alert-icon">🌍</div><div class="alert-content"><div class="alert-title">Aardbeving M${p.mag.toFixed(1)} — ${p.place}</div><div class="alert-body">Diepte: ${Math.round(q.geometry.coordinates[2])} km · ${new Date(p.time).toLocaleString("nl-NL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}${dist}</div></div>`;
+    list.appendChild(card);hasAny=true;
+  });
+  if(hasAny){document.getElementById("alerts-panel").style.display="block"}
+}
+
+function showQuakes(quakes,lat,lon){
+  const list=document.getElementById("quake-list");
+  if(!quakes.length){list.innerHTML=`<div style="font-size:11px;color:var(--dim);padding:8px 0;">Geen significante aardbevingen (M≥2) gevonden binnen 500 km in de afgelopen 30 dagen.</div>`;return}
+  list.innerHTML="";
+  quakes.forEach(q=>{
+    const p=q.properties;
+    const mag=p.mag||0;
+    const magClass=mag<3?"mag-low":mag<5?"mag-med":"mag-high";
+    const magColor=mag<3?"var(--accent)":mag<5?"var(--warn)":"var(--err)";
+    const depth=Math.round(q.geometry.coordinates[2]);
+    const gLat=q.geometry.coordinates[1],gLon=q.geometry.coordinates[0];
+    const dist=Math.round(Math.sqrt(Math.pow(gLat-lat,2)+Math.pow(gLon-lon,2))*111);
+    q._dist=dist;
+    const row=document.createElement("div");row.className="quake-row";
+    row.innerHTML=`<div class="quake-mag" style="color:${magColor}">M${mag.toFixed(1)}</div><div class="quake-info"><div class="quake-place">${p.place||"Onbekende locatie"}</div><div class="quake-meta">Diepte ${depth} km · ${dist} km afstand · ${new Date(p.time).toLocaleString("nl-NL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</div></div><span class="quake-badge ${magClass}">${mag<3?"licht":mag<5?"matig":"sterk"}</span>`;
+    list.appendChild(row);
+  });
+}
+
+function showPrecip(p){
+  const maxV=Math.max(...p.amounts,0.1);
+  const bars=document.getElementById("precip-bars");bars.innerHTML="";
+  p.amounts.forEach((mm,i)=>{
+    const h=Math.max(2,Math.round((mm/maxV)*40));
+    const cls=mm>5?"extreme":mm>2?"heavy":"";
+    const t=new Date(p.times[i]);
+    const wrap=document.createElement("div");wrap.className="precip-bar-wrap";
+    wrap.innerHTML=`<div class="precip-bar ${cls}" style="height:${h}px"></div><div class="precip-lbl">${t.getHours()}u</div>`;
+    bars.appendChild(wrap);
+  });
+  document.getElementById("precip-section").style.display="block";
+}
+
+
+// =================== FAVORIETEN (localStorage) ===================
+function loadFavs(){
+  try{ return JSON.parse(localStorage.getItem("dw_favs")||"[]") }
+  catch{ return [] }
+}
+function saveFavs(favs){ localStorage.setItem("dw_favs", JSON.stringify(favs)) }
+
+function renderFavs(){
+  const favs = loadFavs();
+  const row = document.getElementById("fav-row");
+  row.innerHTML = "";
+
+  if(!favs.length && !rLat){
+    const em = document.createElement("span");
+    em.className = "fav-empty";
+    em.textContent = "Geen favorieten — haal weer op en tik '+ Sla op'";
+    row.appendChild(em);
     return;
   }
 
-  buildFormatGrid(type);
-  document.getElementById('stream-section').style.display = type === 'video' ? 'block' : 'none';
-  document.getElementById('preset-section').style.display = (type === 'video' || type === 'audio') ? 'block' : 'none';
-  document.getElementById('controls').classList.add('visible');
-  document.getElementById('result-box').classList.remove('visible');
-  document.getElementById('progress-wrap').classList.remove('visible');
-
-  if (!ffmpeg) initFFmpeg();
-}
-
-function buildFormatGrid(type) {
-  const grid = document.getElementById('format-grid');
-  grid.innerHTML = '';
-  const currentExt = inputFile.name.split('.').pop().toLowerCase();
-  FORMAT_MAP[type].outputs.forEach(fmt => {
-    const btn = document.createElement('button');
-    btn.className = 'fmt-btn' + (fmt === currentExt ? ' disabled' : '');
-    btn.textContent = fmt;
-    btn.dataset.fmt = fmt;
-    btn.onclick = () => selectFormat(fmt);
-    grid.appendChild(btn);
+  // Toon opgeslagen favorieten als chips
+  favs.forEach((fav,i)=>{
+    const chip = document.createElement("div");
+    chip.className = "fav-chip";
+    chip.title = fav.name;
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "fav-name";
+    nameSpan.textContent = "⭐ " + fav.name;
+    const delSpan = document.createElement("span");
+    delSpan.className = "fav-del";
+    delSpan.textContent = "✕";
+    delSpan.onclick = (e)=>deleteFav(i,e);
+    chip.appendChild(nameSpan);
+    chip.appendChild(delSpan);
+    chip.onclick = ()=>loadFav(fav);
+    row.appendChild(chip);
   });
-}
 
-function selectFormat(fmt) {
-  document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('selected'));
-  const btn = document.querySelector(`[data-fmt="${fmt}"]`);
-  if (btn) btn.classList.add('selected');
-
-  // show/hide stream options depending on output type
-  const audioFmts = ['mp3','aac','wav','m4a','ogg','flac','opus'];
-  const isAudioOut = audioFmts.includes(fmt);
-  document.getElementById('stream-section').style.display =
-    (detectType(inputFile.name) === 'video' && !isAudioOut) ? 'block' : 'none';
-
-  document.getElementById('convert-btn').disabled = false;
-  currentPreset = null;
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
-}
-
-// ─── STREAM MODE ──────────────────────────────────────────────────────────────
-function setStream(mode) {
-  streamMode = mode;
-  ['video-audio','video-only','audio-only'].forEach(id => {
-    document.getElementById('opt-' + id)?.classList.remove('selected');
-  });
-  const map = { both: 'video-audio', video: 'video-only', audio: 'audio-only' };
-  document.getElementById('opt-' + map[mode])?.classList.add('selected');
-}
-
-// ─── QUALITY ─────────────────────────────────────────────────────────────────
-function updateQualityLabel(v) {
-  const labels = { '1': 'Small file', '2': 'Medium', '3': 'High quality' };
-  document.getElementById('quality-label').textContent = labels[v];
-}
-
-function getQualityArgs(fmt, quality) {
-  // quality: 1=low/small, 2=medium, 3=high
-  const videoFmts = ['mp4','mov','avi','mkv','webm','flv'];
-  const audioFmts = ['mp3','aac','wav','m4a','ogg','flac','opus'];
-  const q = parseInt(quality);
-
-  if (videoFmts.includes(fmt)) {
-    const crf = q === 1 ? '32' : q === 2 ? '23' : '18';
-    return ['-crf', crf, '-preset', q === 1 ? 'veryfast' : q === 2 ? 'medium' : 'slow'];
-  }
-  if (fmt === 'mp3') {
-    const ab = q === 1 ? '96k' : q === 2 ? '192k' : '320k';
-    return ['-b:a', ab];
-  }
-  if (['aac','m4a'].includes(fmt)) {
-    const ab = q === 1 ? '96k' : q === 2 ? '192k' : '256k';
-    return ['-b:a', ab];
-  }
-  return [];
-}
-
-// ─── SOCIAL PRESETS ──────────────────────────────────────────────────────────
-const PRESETS = {
-  whatsapp:  { fmt: 'mp4', vf: 'scale=640:-2', extra: ['-b:v','600k','-b:a','128k','-movflags','+faststart'], label: 'WhatsApp — max quality for 16MB limit' },
-  signal:    { fmt: 'mp4', vf: 'scale=1280:-2', extra: ['-b:v','2000k','-b:a','192k','-movflags','+faststart'], label: 'Signal — high quality up to 100MB' },
-  telegram:  { fmt: 'mp4', vf: 'scale=1920:-2', extra: ['-b:v','4000k','-b:a','256k','-movflags','+faststart'], label: 'Telegram — full quality' },
-  instagram: { fmt: 'mp4', vf: 'scale=1080:-2,pad=1080:1350:(ow-iw)/2:(oh-ih)/2', extra: ['-b:v','3500k','-b:a','192k','-movflags','+faststart'], label: 'Instagram — 1080×1350 portrait' },
-  tiktok:    { fmt: 'mp4', vf: 'scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2', extra: ['-b:v','3000k','-b:a','192k'], label: 'TikTok — 1080×1920 vertical' },
-  youtube:   { fmt: 'mp4', vf: 'scale=1920:-2', extra: ['-b:v','8000k','-b:a','320k','-movflags','+faststart'], label: 'YouTube — 1080p high quality' },
-};
-
-function setPreset(name, btn) {
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  currentPreset = name === 'none' ? null : name;
-
-  if (currentPreset && PRESETS[currentPreset]) {
-    const p = PRESETS[currentPreset];
-    document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('selected'));
-    const fmtBtn = document.querySelector(`[data-fmt="${p.fmt}"]`);
-    if (fmtBtn) fmtBtn.classList.add('selected');
-  }
-
-  document.getElementById('convert-btn').disabled = false;
-}
-
-// ─── CONVERT ─────────────────────────────────────────────────────────────────
-async function startConvert() {
-  if (!ffmpeg || !inputFile) return;
-  if (!ffmpeg.isLoaded()) { await initFFmpeg(); }
-
-  const selectedFmt = document.querySelector('.fmt-btn.selected');
-  if (!selectedFmt) { alert('Select an output format first.'); return; }
-  const fmt = selectedFmt.dataset.fmt;
-  const quality = document.getElementById('quality-slider').value;
-
-  const btn = document.getElementById('convert-btn');
-  btn.disabled = true;
-  document.getElementById('convert-btn-text').innerHTML = '<span class="spinner"></span> Converting…';
-
-  document.getElementById('progress-wrap').classList.add('visible');
-  document.getElementById('result-box').classList.remove('visible');
-  document.getElementById('progress-fill').style.width = '0%';
-  document.getElementById('progress-pct').textContent = '0%';
-  document.getElementById('progress-step').textContent = 'Reading your file…';
-
-  try {
-    const inputName = 'input.' + inputFile.name.split('.').pop().toLowerCase();
-    const outputName = 'output.' + fmt;
-
-    ffmpeg.FS('writeFile', inputName, await FFmpeg.fetchFile(inputFile));
-    document.getElementById('progress-step').textContent = 'Converting…';
-
-    let args = ['-i', inputName];
-
-    if (currentPreset && PRESETS[currentPreset]) {
-      const p = PRESETS[currentPreset];
-      if (streamMode === 'video') args.push('-an');
-      if (streamMode === 'audio') args.push('-vn');
-      if (p.vf && streamMode !== 'audio') args.push('-vf', p.vf);
-      args = args.concat(p.extra);
-    } else {
-      // stream mode
-      if (streamMode === 'video') args.push('-an');
-      if (streamMode === 'audio') args.push('-vn');
-
-      // quality args
-      const audioFmts = ['mp3','aac','wav','m4a','ogg','flac','opus'];
-      if (!audioFmts.includes(fmt) && streamMode !== 'audio') {
-        args = args.concat(getQualityArgs(fmt, quality));
-      } else if (audioFmts.includes(fmt)) {
-        args = args.concat(getQualityArgs(fmt, quality));
-      }
-
-      // format-specific codec hints
-      if (fmt === 'mp4') args.push('-movflags', '+faststart');
-      if (fmt === 'webm') args.push('-c:v', 'libvpx-vp9', '-c:a', 'libopus');
-      if (fmt === 'gif') args.push('-vf', 'fps=10,scale=480:-1:flags=lanczos', '-loop', '0');
-      if (fmt === 'mp3') args.push('-c:a', 'libmp3lame');
-      if (fmt === 'ogg') args.push('-c:a', 'libvorbis');
-      if (fmt === 'opus') args.push('-c:a', 'libopus');
+  // Toon "+ Sla op" knop als er een actieve locatie is die nog niet opgeslagen is
+  if(rLat && rName){
+    const alreadySaved = favs.some(f=>f.name===rName);
+    if(!alreadySaved){
+      const addBtn = document.createElement("button");
+      addBtn.className = "fav-add-btn";
+      addBtn.textContent = "+ Sla '" + rName.split(",")[0] + "' op";
+      addBtn.onclick = saveCurFav;
+      row.appendChild(addBtn);
     }
+  }
+}
 
-    args.push('-y', outputName);
-    document.getElementById('progress-step').textContent = 'Processing…';
+function saveCurFav(){
+  if(!rLat||!rName) return;
+  const favs = loadFavs();
+  if(favs.find(f=>f.name===rName)) return; // al opgeslagen
+  favs.push({name:rName, lat:rLat, lon:rLon});
+  saveFavs(favs);
+  renderFavs();
+  setS("⭐ "+rName+" opgeslagen als favoriet.");
+}
 
-    await ffmpeg.run(...args);
+function deleteFav(idx, e){
+  e.stopPropagation();
+  const favs = loadFavs();
+  favs.splice(idx,1);
+  saveFavs(favs);
+  renderFavs();
+}
 
-    const data = ffmpeg.FS('readFile', outputName);
-    const blob = new Blob([data.buffer], { type: getMimeType(fmt) });
+function loadFav(fav){
+  rLat = fav.lat; rLon = fav.lon; rName = fav.name;
+  document.getElementById("loc-input").value = fav.name;
+  showRes(fav.name);
+  doFetch();
+}
 
-    if (outputUrl) URL.revokeObjectURL(outputUrl);
-    outputUrl = URL.createObjectURL(blob);
+// =================== HOOFD FETCH ===================
+async function doFetch(){
+  if(!rLat){const q=document.getElementById("loc-input").value.trim();if(!q){setS("Voer eerst een stad in of gebruik GPS.");return}await geocodeManual(q);if(!rLat)return}
+  const rb=document.getElementById("refresh-btn"),fb=document.getElementById("fetch-btn");
+  rb.classList.add("spinning");rb.disabled=true;fb.disabled=true;
+  document.getElementById("alerts-panel").style.display="none";
+  document.getElementById("precip-section").style.display="none";
+  document.getElementById("avg-row").style.display="none";
+  document.getElementById("detail-section").style.display="none";
+  document.getElementById("aqi-bar").style.display="none";
+  setP(2);
+  const lat=rLat,lon=rLon;
+  const sd=new Array(10).fill(undefined);
+  document.getElementById("data-view").style.display="block";
+  renderSrc(sd);
 
-    // show result
-    const downloadBtn = document.getElementById('download-btn');
-    const baseName = inputFile.name.replace(/\.[^.]+$/, '');
-    downloadBtn.href = outputUrl;
-    downloadBtn.download = baseName + '_converted.' + fmt;
-    document.getElementById('result-meta').textContent =
-      `${baseName}_converted.${fmt}  ·  ${formatBytes(blob.size)}  ·  ${fmt.toUpperCase()}`;
+  // Kaart initialiseren (async — RainViewer data ophalen)
+  setTimeout(()=>initMap(lat,lon),80);
 
-    document.getElementById('result-box').classList.add('visible');
-    document.getElementById('progress-fill').style.width = '100%';
-    document.getElementById('progress-pct').textContent = '100%';
-    document.getElementById('progress-step').textContent = 'Done.';
-
-    // cleanup ffmpeg FS
-    try { ffmpeg.FS('unlink', inputName); } catch(e){}
-    try { ffmpeg.FS('unlink', outputName); } catch(e){}
-
-  } catch (e) {
-    document.getElementById('progress-step').textContent = 'Something went wrong: ' + e.message;
-    console.error(e);
+  // 10 weerbronnen
+  for(let i=0;i<FETCHERS.length;i++){
+    setS(`${SRCS[i].name} ophalen… (${i+1}/10)`);
+    try{sd[i]=await FETCHERS[i](lat,lon)}catch{sd[i]=null}
+    setP(4+(i+1)*6);
+    renderSrc(sd);
+    updM(sd.map(x=>x===undefined?null:x));
   }
 
-  btn.disabled = false;
-  document.getElementById('convert-btn-text').textContent = 'Convert';
+  setP(68);
+  // Parallelle extra fetches
+  setS("Luchtkwaliteit · Aardbevingen · Globale rampen · Neerslag…");
+  const [aq,quakes,gdacs,precip]=await Promise.allSettled([
+    fetchAirQuality(lat,lon),
+    fetchEarthquakes(lat,lon),
+    fetchGDACS(lat,lon),
+    fetchPrecip(lat,lon),
+  ]);
+
+  setP(92);
+  const aqData=aq.status==="fulfilled"?aq.value:null;
+  const quakeData=quakes.status==="fulfilled"?quakes.value:[];
+  const gdacsData=gdacs.status==="fulfilled"?gdacs.value:[];
+  const precipData=precip.status==="fulfilled"?precip.value:null;
+
+  showAQI(aqData);
+  showQuakes(quakeData,lat,lon);
+  showAlerts([],gdacsData,quakeData);
+  if(precipData)showPrecip(precipData);
+
+  // Luchtkwaliteit details toevoegen
+  if(aqData){
+    const dl=document.getElementById("detail-list");
+    dl.innerHTML+=`
+      <div class="detail-row"><span class="detail-key">💨 PM2.5</span><span class="detail-v">${fmt(aqData.pm25,1)} μg/m³</span></div>
+      <div class="detail-row"><span class="detail-key">💨 PM10</span><span class="detail-v">${fmt(aqData.pm10,1)} μg/m³</span></div>
+      <div class="detail-row"><span class="detail-key">🧪 NO₂</span><span class="detail-v">${fmt(aqData.no2,1)} μg/m³</span></div>
+      <div class="detail-row"><span class="detail-key">🧪 O₃ (ozon)</span><span class="detail-v">${fmt(aqData.o3,1)} μg/m³</span></div>`;
+  }
+
+  setP(100);
+  const ok=sd.filter(x=>x&&x!==undefined).length;
+  setS(`${ok}/10 weerbronnen · USGS aardbevingen · GDACS · AQI · ${rName} · ${new Date().toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"})}`);
+  rb.classList.remove("spinning");rb.disabled=false;fb.disabled=false;
+  renderFavs();
 }
 
-// ─── UTILS ────────────────────────────────────────────────────────────────────
-function getMimeType(fmt) {
-  const map = {
-    mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime',
-    avi: 'video/x-msvideo', mkv: 'video/x-matroska',
-    mp3: 'audio/mpeg', wav: 'audio/wav', aac: 'audio/aac',
-    flac: 'audio/flac', ogg: 'audio/ogg', m4a: 'audio/mp4',
-    opus: 'audio/opus', jpg: 'image/jpeg', jpeg: 'image/jpeg',
-    png: 'image/png', webp: 'image/webp', gif: 'image/gif', bmp: 'image/bmp'
-  };
-  return map[fmt] || 'application/octet-stream';
-}
-
-function formatBytes(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-}
-
-function resetAll() {
-  inputFile = null;
-  currentPreset = null;
-  streamMode = 'both';
-  document.getElementById('file-name').textContent = '';
-  document.getElementById('controls').classList.remove('visible');
-  document.getElementById('result-box').classList.remove('visible');
-  document.getElementById('progress-wrap').classList.remove('visible');
-  document.getElementById('convert-btn').disabled = true;
-  document.getElementById('convert-btn-text').textContent = 'Convert';
-  if (outputUrl) { URL.revokeObjectURL(outputUrl); outputUrl = null; }
-}
-
-function setEngineStatus(state, text) {
-  const el = document.getElementById('engine-status');
-  if (el) el.className = state;
-  const t = document.getElementById('engine-text');
-  if (t) t.textContent = text;
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  setEngineStatus('', 'Drop a file to start — engine loads automatically');
-});
+document.addEventListener("click",e=>{if(!e.target.closest(".loc-wrap"))hideSug()});
+renderFavs();
 </script>
-
-
 </body>
 </html>
